@@ -2,322 +2,1034 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Undian Doorprize — Tahun Baru Islam</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════
+   ROOT VARIABLES & RESET
+═══════════════════════════════════════════ */
 :root {
-  --font-display: Georgia, 'Times New Roman', serif;
-  --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono:    'Courier New', Courier, monospace;
-  --gold:  #D4AF37; --gold2: #F5D061;
-  --dark:  #060d0f; --dark2: #0d1a14;
-  --green: #1a6b3a; --green2: #22a85a; --green3: #4ade80;
-  --teal:  #0d7a6a; --teal2: #14b8a6;
-  --red:   #b91c1c; --red2:  #ef4444;
-  --text:  #e8f0ec; --muted: #7a9a88;
-  --radius: 12px; --touch: 44px;
+  /* Warna lebih cerah & kontras untuk infokus malam */
+  --gold:    #FFD700;
+  --gold2:   #FFE55C;
+  --gold3:   #FFF3A3;
+  --dark:    #0B2419;
+  --dark2:   #0F2F1E;
+  --dark3:   #143B26;
+  --green:   #00A83A;
+  --green2:  #00D94A;
+  --green3:  #6BFFAA;
+  --teal:    #00C4A0;
+  --teal2:   #00FFD4;
+  --red:     #CC1111;
+  --red2:    #FF3333;
+  --orange:  #FF8C00;
+  --orange2: #FFA533;
+  --text:    #FFFFFF;
+  --text2:   #D4EDD8;
+  --muted:   #7EC896;
+  --radius:  14px;
+  /* Dimensi kartu hadiah undi — dipakai untuk kalkulasi tinggi panel */
+  --prize-card-h: 112px;  /* tinggi 1 kartu landscape */
+  --prize-gap:     18px;  /* gap antar kartu di prize-grid */
+  --prize-title-h: 52px;  /* prize-frame-title row (padding atas 18px + font + padding bawah 14px) */
+  --prize-pad-bot: 22px;  /* padding bawah prize-frame */
+  /* Total viewport 3 kartu = 3×card + 2×gap */
+  --viewport-3:   calc(3 * var(--prize-card-h) + 2 * var(--prize-gap));
+  /* Total frame height = title + viewport + padding bawah */
+  --panel-h:      calc(var(--prize-title-h) + var(--viewport-3) + var(--prize-pad-bot));
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
-body{font-family:var(--font-body);background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.5'%3E%3Cpolygon points='30,2 58,16 58,44 30,58 2,44 2,16'/%3E%3C/g%3E%3C/svg%3E");background-size:60px 60px;}
-#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;display:none;}
-@media(min-width:768px){#bg-canvas{display:block;}}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 18px; /* Base font lebih besar */
+}
 
-/* TICKER */
-.ticker-wrap{overflow:hidden;background:rgba(212,175,55,.07);border-bottom:1px solid rgba(212,175,55,.15);padding:6px 0;position:relative;z-index:1;}
-.ticker{display:inline-block;white-space:nowrap;animation:ticker 30s linear infinite;color:var(--gold2);font-size:.8rem;font-weight:600;}
-@keyframes ticker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+/* ═══════════════════════════════════════════
+   ANIMATED BACKGROUND
+═══════════════════════════════════════════ */
+#bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-/* PUBLIC */
-#public-view{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
-.pub-header{text-align:center;padding:20px 16px 14px;}
-.pub-crescent{font-size:2.2rem;display:block;margin-bottom:4px;animation:floatMoon 4s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(212,175,55,.5));}
-@keyframes floatMoon{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.pub-title{font-family:var(--font-display);font-size:clamp(.95rem,4vw,2rem);color:var(--gold);font-weight:700;text-shadow:0 0 30px rgba(212,175,55,.4);line-height:1.3;}
-.pub-arabic{font-size:clamp(.85rem,2.5vw,1.3rem);color:var(--gold2);opacity:.8;margin-top:3px;}
-.pub-tema{color:var(--muted);font-size:.82rem;margin-top:4px;}
-.pub-org{display:inline-block;margin-top:6px;padding:3px 14px;border-radius:30px;border:1px solid rgba(212,175,55,.2);font-size:.76rem;color:var(--gold2);}
-.pub-main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px 12px 28px;gap:14px;}
+/* Pola geometri Islam */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .06;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23FFD700' stroke-width='0.8'%3E%3Cpolygon points='40,4 76,22 76,58 40,76 4,58 4,22'/%3E%3Cpolygon points='40,16 64,28 64,52 40,64 16,52 16,28'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+}
 
-/* STATS */
-.pub-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:700px;}
-@media(min-width:480px){.pub-stats{grid-template-columns:repeat(4,1fr);}}
-.pub-stat{background:rgba(13,26,20,.8);border:1px solid rgba(212,175,55,.13);border-radius:10px;padding:12px 8px;text-align:center;}
-.pub-stat .num{font-size:1.7rem;font-weight:800;line-height:1;}
-.pub-stat .lbl{font-size:.64rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
-.pub-stat.gold-s .num{color:var(--gold);}
-.pub-stat.green-s .num{color:var(--green3);}
-.pub-stat.teal-s .num{color:var(--teal2);}
-.pub-stat.red-s .num{color:var(--red2);}
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+#app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 20px 80px; }
 
-/* BOX */
-.pub-box{width:100%;max-width:800px;background:rgba(13,26,20,.78);border:1px solid rgba(212,175,55,.13);border-radius:14px;padding:16px;backdrop-filter:blur(6px);}
-.pub-box.accent{border-color:rgba(34,168,90,.2);}
-.pub-box.undian{border-color:rgba(212,175,55,.25);}
-.pub-box h2,.pub-box h3{font-size:.88rem;font-weight:800;color:var(--gold2);margin-bottom:12px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid rgba(212,175,55,.1);}
-.pub-box h3{color:var(--green3);font-size:.8rem;}
-.hadiah-upcoming-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:rgba(6,13,10,.5);border:1px solid rgba(212,175,55,.07);margin-bottom:6px;}
-.hadiah-upcoming-item.selesai{opacity:.45;}
-.hun-num{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;flex-shrink:0;}
-.hun-num.done{background:var(--muted);}
-.hun-info{flex:1;min-width:0;}
-.hun-info strong{font-size:.86rem;display:block;}
-.hun-info .hun-meta{color:var(--muted);font-size:.7rem;margin-top:2px;}
-.pub-undian-item{background:rgba(6,13,10,.6);border:1px solid rgba(212,175,55,.1);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
-.btn-undi-publik{padding:9px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#b8860b,var(--gold));color:#1a1200;font-family:var(--font-body);font-weight:800;font-size:.84rem;cursor:pointer;white-space:nowrap;min-height:var(--touch);margin-left:auto;}
-.btn-undi-publik:disabled{opacity:.4;cursor:not-allowed;}
-.pub-pemenang-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;}
-.pub-pemenang-item{background:rgba(6,13,10,.6);border:1px solid rgba(212,175,55,.08);border-radius:9px;padding:8px 12px;display:flex;align-items:center;gap:8px;animation:fadeUp .3s ease;flex-wrap:wrap;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.pub-pemenang-item .hadiah-badge{background:rgba(212,175,55,.13);border:1px solid rgba(212,175,55,.2);color:var(--gold2);padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:800;flex-shrink:0;}
-.pub-pemenang-item .kk{font-family:var(--font-mono);font-size:.78rem;color:var(--gold2);flex-shrink:0;}
-.pub-pemenang-item .nama{font-weight:700;font-size:.86rem;flex:1;min-width:80px;}
-.pub-pemenang-item .kel{font-size:.72rem;color:var(--muted);}
-.pub-empty{text-align:center;color:var(--muted);padding:28px 16px;font-size:.86rem;}
+/* ═══════════════════════════════════════════
+   HEADER — font lebih besar & kontras
+═══════════════════════════════════════════ */
+header { text-align: center; padding: 18px 20px 24px; position: relative; }
+header h1 {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  color: var(--gold);
+  letter-spacing: .06em;
+  text-shadow: 0 0 50px rgba(255,215,0,.7), 0 2px 6px rgba(0,0,0,.8);
+  line-height: 1.3;
+}
+.header-arabic {
+  font-family: 'Amiri', serif;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: var(--gold2);
+  margin-top: 6px; opacity: .9;
+  display: none; /* Dihapus dari tampilan */
+}
+.header-sub {
+  color: var(--green3); font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  margin-top: 8px; font-weight: 800;
+  text-shadow: 0 0 20px rgba(107,255,170,.3);
+  letter-spacing: .03em;
+}
+#header-panitia {
+  display: inline-block; margin-top: 12px; padding: 6px 24px;
+  border: 1px solid rgba(255,215,0,.3); border-radius: 30px;
+  font-size: .95rem; color: var(--gold2); letter-spacing: .05em;
+}
 
-/* BADGE */
-.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:800;}
-.badge-teal{background:rgba(20,184,166,.15);color:var(--teal2);}
-.badge-gold{background:rgba(212,175,55,.15);color:var(--gold2);}
-.badge-green{background:rgba(34,168,90,.15);color:var(--green3);}
-.badge-red{background:rgba(185,28,28,.15);color:var(--red2);}
-.badge-muted{background:rgba(122,154,136,.15);color:var(--muted);}
+/* ═══════════════════════════════════════════
+   SIDE MENUS — Flyout Navigation
+═══════════════════════════════════════════ */
+.side-menu {
+  position: fixed; top: 50%; z-index: 100;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 6px;
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.side-menu.left {
+  left: 0;
+  transform: translateY(-50%) translateX(-100%);
+  padding-right: 0;
+}
+.side-menu.right {
+  right: 0;
+  transform: translateY(-50%) translateX(100%);
+  padding-left: 0;
+}
+/* Arrow tab indicators — always visible */
+.side-arrow {
+  position: fixed; top: 50%; z-index: 101;
+  transform: translateY(-50%);
+  width: 18px; height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .3s;
+  opacity: .5;
+}
+.side-arrow:hover { opacity: 1; }
+.side-arrow.left-arrow  { left: 0; }
+.side-arrow.right-arrow { right: 0; }
+.side-arrow .arrow-icon {
+  font-size: .7rem; color: var(--gold2);
+  animation: pulseArrow 2s ease-in-out infinite;
+}
+@keyframes pulseArrow {
+  0%,100% { opacity: .4; } 50% { opacity: 1; }
+}
+/* Invisible hover trigger zone */
+.side-trigger {
+  position: fixed; top: 0; width: 32px; height: 100%; z-index: 99;
+}
+.side-trigger.left  { left: 0; }
+.side-trigger.right { right: 0; }
+.side-trigger.left:hover ~ .side-menu.left,
+.side-trigger.left:hover ~ .side-arrow.left-arrow,
+.side-menu.left:hover {
+  transform: translateY(-50%) translateX(0);
+}
+.side-trigger.right:hover ~ .side-menu.right,
+.side-trigger.right:hover ~ .side-arrow.right-arrow,
+.side-menu.right:hover {
+  transform: translateY(-50%) translateX(0);
+}
+/* Hide arrows when menu is shown */
+.side-trigger.left:hover ~ .side-arrow.left-arrow,
+.side-trigger.right:hover ~ .side-arrow.right-arrow { opacity: 0; }
+.side-menu-btn {
+  padding: 14px 18px; border: none;
+  border-radius: 0 12px 12px 0;
+  background: rgba(10,26,13,.95); border: 1px solid rgba(255,215,0,.25);
+  color: var(--gold2); font-family: 'Nunito', sans-serif;
+  font-size: .88rem; font-weight: 800; cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+  backdrop-filter: blur(12px);
+  box-shadow: 4px 0 20px rgba(0,0,0,.4);
+  display: flex; align-items: center; gap: 8px;
+}
+.side-menu.right .side-menu-btn {
+  border-radius: 12px 0 0 12px;
+  box-shadow: -4px 0 20px rgba(0,0,0,.4);
+}
+.side-menu-btn:hover {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; border-color: var(--green2);
+  box-shadow: 0 0 20px rgba(0,168,58,.5);
+}
+.side-menu-btn .sm-icon { font-size: 1.1rem; }
 
-/* MODAL */
-.modal-backdrop{position:fixed;inset:0;z-index:9990;background:rgba(6,13,10,.93);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:16px;}
-.modal-backdrop.show{display:flex;}
-.modal-box{background:rgba(13,26,20,.97);border:1px solid rgba(212,175,55,.22);border-radius:18px;width:min(94vw,420px);text-align:center;box-shadow:0 0 60px rgba(0,0,0,.5);animation:modalIn .25s ease;overflow:hidden;}
-@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-.modal-header{padding:22px 22px 14px;border-bottom:1px solid rgba(212,175,55,.1);}
-.modal-icon{font-size:2rem;display:block;margin-bottom:8px;}
-.modal-title{font-size:1rem;color:var(--gold);font-weight:800;margin-bottom:3px;}
-.modal-sub{font-size:.8rem;color:var(--muted);line-height:1.5;}
-.modal-body{padding:14px 22px;}
-.modal-footer{padding:10px 22px 20px;}
+/* Compact undian stats bar */
+.undian-stats-bar {
+  display: flex; gap: 10px; justify-content: center;
+  flex-wrap: wrap; padding: 8px 0; margin-top: 8px;
+}
+.undian-stat-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(10,26,13,.8); border: 1px solid rgba(255,215,0,.12);
+  border-radius: 20px; padding: 4px 14px;
+  font-size: .78rem; color: var(--muted); font-weight: 700;
+  backdrop-filter: blur(6px);
+}
+.undian-stat-chip .chip-num {
+  font-weight: 900; font-size: .85rem;
+}
+.undian-stat-chip.chip-gold .chip-num  { color: var(--gold2); }
+.undian-stat-chip.chip-green .chip-num { color: var(--green3); }
+.undian-stat-chip.chip-teal .chip-num  { color: #00FFD4; }
 
-/* PIN */
-.pin-hadiah-name{background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.18);border-radius:7px;padding:6px 12px;margin-bottom:14px;font-size:.84rem;color:var(--gold2);font-weight:700;}
-.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:16px;}
-.pin-dot{width:16px;height:16px;border-radius:50%;background:rgba(212,175,55,.13);border:2px solid rgba(212,175,55,.3);transition:all .15s;}
-.pin-dot.filled{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(212,175,55,.5);}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-.pin-key{aspect-ratio:1;background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.13);border-radius:10px;color:var(--text);font-family:var(--font-body);font-size:1.2rem;font-weight:700;cursor:pointer;transition:all .12s;user-select:none;display:flex;align-items:center;justify-content:center;min-height:var(--touch);}
-.pin-key:active{transform:scale(.9);background:rgba(212,175,55,.18);}
-.pin-key.del{font-size:.9rem;color:var(--muted);}
-.pin-error{background:rgba(185,28,28,.13);border:1px solid rgba(185,28,28,.28);color:#fca5a5;padding:7px 12px;border-radius:7px;font-size:.8rem;margin-bottom:10px;display:none;}
-.pin-error.show{display:block;animation:shake .3s ease;}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.pin-cancel{font-size:.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;}
+/* Overlay panels for sub-menus */
+.panel-overlay {
+  position: fixed; top: 0; bottom: 0; z-index: 200;
+  width: min(92vw, 680px);
+  background: rgba(11,36,25,.97);
+  border: 1px solid rgba(255,215,0,.2);
+  backdrop-filter: blur(16px);
+  overflow-y: auto; padding: 28px 24px;
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 60px rgba(0,0,0,.7);
+}
+.panel-overlay.panel-left {
+  left: 0; transform: translateX(-110%);
+  border-right: 2px solid rgba(255,215,0,.2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.panel-overlay.panel-right {
+  right: 0; transform: translateX(110%);
+  border-left: 2px solid rgba(255,215,0,.2);
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+.panel-overlay.open { transform: translateX(0); }
+.panel-overlay-backdrop {
+  position: fixed; inset: 0; z-index: 199;
+  background: rgba(0,0,0,.5); display: none;
+  backdrop-filter: blur(3px);
+}
+.panel-overlay-backdrop.show { display: block; animation: fadeUp .2s ease; }
+.panel-close {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  color: var(--muted); border-radius: 8px; width: 36px; height: 36px;
+  cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.panel-close:hover { background: rgba(204,17,17,.4); color: #fff; }
+.panel-title {
+  font-size: 1.15rem; font-weight: 900; color: var(--gold2);
+  margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,215,0,.15);
+  display: flex; align-items: center; gap: 10px;
+}
 
-/* KONFIRMASI PUBLIK — diperluas untuk undi ulang */
-.konfirm-pemenang-list{max-height:240px;overflow-y:auto;margin:12px 0;display:flex;flex-direction:column;gap:7px;}
-.konfirm-item{background:rgba(6,13,10,.6);border:1px solid rgba(212,175,55,.12);border-radius:9px;padding:10px 13px;display:flex;align-items:center;gap:10px;}
-.konfirm-num{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex-shrink:0;}
-.konfirm-info{flex:1;text-align:left;min-width:0;}
-.konfirm-kk{font-family:var(--font-mono);font-size:.76rem;color:var(--gold2);}
-.konfirm-nama{font-weight:700;font-size:.86rem;}
-.konfirm-kel{font-size:.72rem;color:var(--muted);}
-/* Checkbox per pemenang */
-.konfirm-cb{width:20px;height:20px;accent-color:var(--green2);cursor:pointer;flex-shrink:0;}
-.konfirm-note{font-size:.74rem;color:var(--muted);margin-bottom:10px;text-align:left;padding:6px 10px;background:rgba(212,175,55,.06);border-radius:7px;border:1px solid rgba(212,175,55,.1);}
-.konfirm-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-.btn-konfirm-hadir{padding:11px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;font-family:var(--font-body);font-weight:800;font-size:.86rem;cursor:pointer;min-height:var(--touch);}
-.btn-konfirm-ulang{padding:11px;border:1px solid rgba(212,175,55,.3);border-radius:9px;background:rgba(212,175,55,.1);color:var(--gold2);font-family:var(--font-body);font-weight:800;font-size:.86rem;cursor:pointer;min-height:var(--touch);}
-.btn-konfirm-skip{width:100%;padding:9px;margin-top:6px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);font-family:var(--font-body);font-size:.8rem;cursor:pointer;min-height:var(--touch);}
+/* Tab panels: undian always visible, others hidden */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp .3s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
 
-/* UNDI ULANG OVERLAY — loading animasi khusus */
-#undi-ulang-overlay{position:fixed;inset:0;z-index:9999;background:rgba(6,13,10,.95);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
-#undi-ulang-overlay.show{display:flex;}
-.uu-icon{font-size:3rem;animation:spin .8s linear infinite;}
-.uu-text{color:var(--gold);font-size:1rem;font-weight:700;letter-spacing:.06em;}
-.uu-sub{color:var(--muted);font-size:.84rem;}
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+.card {
+  background: rgba(10,26,13,.82);
+  border: 1px solid rgba(255,215,0,.18);
+  border-radius: var(--radius); padding: 26px; margin-bottom: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 28px rgba(0,0,0,.4);
+  transition: border-color .2s;
+}
+.card:hover { border-color: rgba(255,215,0,.32); }
+.card h2 {
+  font-size: 1.1rem; font-weight: 900; color: var(--gold2);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+}
+.card h2 .icon { font-size: 1.3rem; }
 
-/* LOGIN */
-.login-error{background:rgba(185,28,28,.13);border:1px solid rgba(185,28,28,.28);color:#fca5a5;padding:9px 12px;border-radius:7px;font-size:.82rem;margin-bottom:12px;display:none;}
-.login-error.show{display:block;}
-.btn-login{width:100%;padding:12px;background:linear-gradient(135deg,#b8860b,var(--gold));color:#1a1200;border:none;border-radius:8px;font-family:var(--font-body);font-weight:800;font-size:.92rem;cursor:pointer;min-height:var(--touch);}
-.btn-login:disabled{opacity:.5;cursor:not-allowed;}
-.login-cancel{display:block;text-align:center;padding:14px;font-size:.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;}
-.login-lbl{display:block;font-size:.72rem;color:var(--muted);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+/* ═══════════════════════════════════════════
+   FORMS — lebih besar
+═══════════════════════════════════════════ */
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+input[type=text], input[type=number], input[type=email], select, textarea {
+  background: rgba(11,36,25,.8); border: 1px solid rgba(255,215,0,.25);
+  border-radius: 8px; color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 1rem;
+  padding: 12px 16px; outline: none; width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,215,0,.15);
+}
+label {
+  font-size: .82rem; color: var(--muted); display: block; margin-bottom: 5px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+}
+input::placeholder, textarea::placeholder { color: rgba(126,200,150,.4); }
 
-#admin-trigger{position:fixed;bottom:14px;right:14px;z-index:500;width:36px;height:36px;background:rgba(13,26,20,.6);border:1px solid rgba(212,175,55,.1);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:rgba(212,175,55,.3);transition:all .3s;}
-#admin-trigger:hover{background:rgba(212,175,55,.1);color:var(--gold2);transform:rotate(90deg);}
+/* ═══════════════════════════════════════════
+   BUTTONS — semua diperbesar
+═══════════════════════════════════════════ */
+.btn {
+  padding: 12px 26px; border: none; border-radius: 8px;
+  font-family: 'Nunito', sans-serif; font-weight: 900;
+  font-size: 1rem; cursor: pointer; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 8px;
+  position: relative; overflow: hidden; letter-spacing: .02em;
+}
+.btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0); transition: background .15s;
+}
+.btn:hover::after { background: rgba(255,255,255,.1); }
+.btn-gold {
+  background: linear-gradient(135deg, #A87000, var(--gold), var(--gold2));
+  color: #1a0d00; box-shadow: 0 2px 20px rgba(255,215,0,.35);
+}
+.btn-gold:hover { box-shadow: 0 4px 30px rgba(255,215,0,.6); transform: translateY(-1px); }
+.btn-green {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; box-shadow: 0 2px 20px rgba(0,168,58,.35);
+}
+.btn-green:hover { box-shadow: 0 4px 30px rgba(0,217,74,.6); transform: translateY(-1px); }
+.btn-teal  { background: linear-gradient(135deg, var(--teal), var(--teal2)); color: #001a15; font-weight: 900; }
+.btn-red   { background: linear-gradient(135deg, var(--red), var(--red2)); color: #fff; }
+.btn-orange { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #1a0800; font-weight: 900; }
+.btn-ghost { background: transparent; border: 2px solid rgba(255,215,0,.4); color: var(--gold); }
+.btn-ghost:hover { background: rgba(255,215,0,.12); }
+.btn-dark  { background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15); color: var(--text); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
+.btn-sm { padding: 7px 16px; font-size: .85rem; }
+.btn-lg { padding: 16px 36px; font-size: 1.1rem; }
+.btn-xl { padding: 20px 48px; font-size: 1.3rem; border-radius: 12px; }
 
-/* ADMIN */
-#admin-view{display:none;position:relative;z-index:1;min-height:100vh;}
-#admin-view.show{display:block;}
-.admin-topbar{position:sticky;top:0;z-index:200;background:rgba(6,13,10,.96);backdrop-filter:blur(10px);border-bottom:1px solid rgba(212,175,55,.13);padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.admin-logo{font-family:var(--font-display);font-size:.9rem;color:var(--gold);flex:1;min-width:100px;font-weight:700;}
-.admin-logo small{color:var(--muted);font-family:var(--font-body);font-size:.72rem;margin-left:5px;}
-.btn-topbar{padding:7px 12px;border:none;border-radius:7px;font-family:var(--font-body);font-weight:700;font-size:.76rem;cursor:pointer;min-height:36px;}
-.btn-topbar-ghost{background:transparent;border:1px solid rgba(212,175,55,.22);color:var(--gold);}
-.btn-topbar-red{background:rgba(185,28,28,.18);border:1px solid rgba(185,28,28,.28);color:var(--red2);}
-.admin-tabs-wrap{padding:12px 12px 0;position:sticky;top:57px;z-index:190;background:var(--dark);}
-.admin-tabs{display:flex;gap:3px;background:rgba(13,26,20,.8);border:1px solid rgba(212,175,55,.1);border-radius:10px;padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-.admin-tabs::-webkit-scrollbar{display:none;}
-.tab-btn{flex:0 0 auto;padding:9px 10px;min-width:72px;background:transparent;border:none;border-radius:7px;color:var(--muted);font-family:var(--font-body);font-size:.76rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;min-height:36px;}
-.tab-btn.active{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;}
-.admin-content{max-width:1100px;margin:0 auto;padding:16px 12px 80px;}
-.tab-panel{display:none;}
-.tab-panel.active{display:block;animation:fadeUp .25s ease;}
+/* ═══════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════ */
+.badge {
+  display: inline-block; padding: 4px 12px; border-radius: 20px;
+  font-size: .8rem; font-weight: 900; letter-spacing: .04em;
+}
+.badge-green    { background: rgba(0,168,58,.25);  color: var(--green3); }
+.badge-gold     { background: rgba(255,215,0,.2);  color: var(--gold2); }
+.badge-muted    { background: rgba(126,200,150,.15); color: var(--muted); }
+.badge-red      { background: rgba(204,17,17,.25);  color: var(--red2); }
+.badge-teal     { background: rgba(0,196,160,.18);  color: var(--teal2); }
+.badge-orange   { background: rgba(255,140,0,.2);   color: var(--orange2); }
 
-/* CARD */
-.card{background:rgba(13,26,20,.75);border:1px solid rgba(212,175,55,.13);border-radius:var(--radius);padding:18px;margin-bottom:14px;backdrop-filter:blur(6px);}
-.card h2{font-size:.9rem;font-weight:800;color:var(--gold2);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+/* ═══════════════════════════════════════════
+   TABLE — font lebih besar
+═══════════════════════════════════════════ */
+.tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid rgba(255,215,0,.12); }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th {
+  background: rgba(255,215,0,.12); color: var(--gold2); padding: 12px 14px;
+  text-align: left; font-weight: 900; font-size: .82rem;
+  text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+}
+td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,215,0,.05); }
+.empty-row td { text-align: center; color: var(--muted); padding: 36px; font-size: 1rem; }
 
-/* FORM */
-.form-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.form-row>div{flex:1;min-width:140px;}
-@media(max-width:480px){.form-row>div{min-width:100%;}}
-input[type=text],input[type=number],input[type=password],select,textarea{background:rgba(6,13,10,.7);border:1px solid rgba(212,175,55,.18);border-radius:7px;color:var(--text);font-family:var(--font-body);font-size:.88rem;padding:9px 12px;outline:none;width:100%;transition:border-color .2s;min-height:40px;}
-input:focus,select:focus,textarea:focus{border-color:var(--gold);}
-label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
-input::placeholder,textarea::placeholder{color:rgba(122,154,136,.5);}
+/* ═══════════════════════════════════════════
+   STAT BOXES — besar & kontras
+═══════════════════════════════════════════ */
+.stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+.stat-box {
+  flex: 1; min-width: 120px;
+  background: rgba(10,26,13,.85); border: 1px solid rgba(255,215,0,.2);
+  border-radius: 14px; padding: 20px 14px; text-align: center;
+  transition: border-color .2s, transform .2s;
+}
+.stat-box:hover { border-color: rgba(255,215,0,.45); transform: translateY(-2px); }
+.stat-box .num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
+.stat-box .lbl { font-size: .8rem; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.stat-box.gold-stat  .num { color: var(--gold); text-shadow: 0 0 20px rgba(255,215,0,.5); }
+.stat-box.green-stat .num { color: var(--green3); text-shadow: 0 0 20px rgba(107,255,170,.4); }
+.stat-box.red-stat   .num { color: var(--red2); text-shadow: 0 0 20px rgba(255,51,51,.4); }
+.stat-box.teal-stat  .num { color: var(--teal2); text-shadow: 0 0 20px rgba(0,255,212,.3); }
+.stat-box.orange-stat .num { color: var(--orange2); text-shadow: 0 0 20px rgba(255,165,51,.4); }
 
-/* BTN */
-.btn{padding:9px 18px;border:none;border-radius:7px;font-family:var(--font-body);font-weight:800;font-size:.86rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:5px;min-height:var(--touch);}
-.btn-gold{background:linear-gradient(135deg,#b8860b,var(--gold));color:#1a1200;}
-.btn-green{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;}
-.btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;}
-.btn-red{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;}
-.btn-ghost{background:transparent;border:1px solid rgba(212,175,55,.28);color:var(--gold);}
-.btn-dark{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text);}
-.btn:disabled{opacity:.4;cursor:not-allowed;}
-.btn-sm{padding:6px 12px;font-size:.76rem;min-height:34px;}
-.btn-lg{padding:12px 28px;font-size:.96rem;}
+/* ═══════════════════════════════════════════
+   ALERT
+═══════════════════════════════════════════ */
+.alert {
+  padding: 14px 18px; border-radius: 10px; font-size: 1rem;
+  margin: 12px 0; display: none; align-items: center; gap: 12px;
+}
+.alert.show { display: flex; animation: fadeUp .2s ease; }
+.alert-success { background: rgba(0,168,58,.18); border: 1px solid rgba(0,168,58,.4); color: #6BFFAA; }
+.alert-error   { background: rgba(204,17,17,.18); border: 1px solid rgba(204,17,17,.4); color: #FF8888; }
+.alert-info    { background: rgba(255,215,0,.14); border: 1px solid rgba(255,215,0,.3); color: var(--gold2); }
+.alert-warn    { background: rgba(255,140,0,.14); border: 1px solid rgba(255,140,0,.3); color: var(--orange2); }
 
-/* ALERT / TOAST */
-.alert{padding:10px 13px;border-radius:7px;font-size:.84rem;margin:8px 0;display:none;}
-.alert.show{display:flex;align-items:center;gap:8px;animation:fadeUp .2s ease;}
-.alert-success{background:rgba(34,168,90,.13);border:1px solid rgba(34,168,90,.28);color:#6ee7b7;}
-.alert-error{background:rgba(185,28,28,.13);border:1px solid rgba(185,28,28,.28);color:#fca5a5;}
-.alert-info{background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.22);color:var(--gold2);}
-.alert-warn{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.22);color:#fde68a;}
-#toast-container{position:fixed;bottom:18px;right:12px;z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:calc(100vw - 24px);}
-.toast{background:rgba(13,26,20,.96);border:1px solid rgba(212,175,55,.28);border-radius:9px;padding:10px 15px;font-size:.84rem;color:var(--text);pointer-events:all;animation:toastIn .25s ease;box-shadow:0 3px 16px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;word-break:break-word;}
-.toast.removing{animation:toastOut .25s ease forwards;}
-@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
-@keyframes toastOut{to{opacity:0;transform:translateX(16px)}}
+/* ═══════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════ */
+#loading-overlay {
+  position: fixed; inset: 0; z-index: 9995;
+  background: rgba(11,36,25,.92); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center; flex-direction: column; gap: 18px;
+}
+#loading-overlay.show { display: flex; }
+.spinner {
+  width: 64px; height: 64px;
+  border: 4px solid rgba(255,215,0,.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--gold); font-size: 1.1rem; font-weight: 800; letter-spacing: .08em; }
 
-/* TABLE */
-.tbl-wrap{overflow-x:auto;border-radius:9px;border:1px solid rgba(212,175,55,.1);-webkit-overflow-scrolling:touch;}
-table{width:100%;border-collapse:collapse;font-size:.82rem;}
-th{background:rgba(212,175,55,.08);color:var(--gold2);padding:9px 10px;text-align:left;font-weight:800;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
-td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:rgba(212,175,55,.03);}
-.empty-row td{text-align:center;color:var(--muted);padding:28px;}
+/* ═══════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════ */
+.progress-wrap { background: rgba(255,255,255,.07); border-radius: 4px; height: 8px; overflow: hidden; margin: 10px 0; }
+.progress-bar  { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 4px; transition: width .4s ease; }
 
-/* STATS */
-.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
-@media(min-width:480px){.stats-row{grid-template-columns:repeat(4,1fr);}}
-.stat-box{background:rgba(13,26,20,.8);border:1px solid rgba(212,175,55,.13);border-radius:10px;padding:14px 10px;text-align:center;}
-.stat-box .num{font-size:1.8rem;font-weight:800;line-height:1;}
-.stat-box .lbl{font-size:.66rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
-.stat-box.gold-stat .num{color:var(--gold);}
-.stat-box.green-stat .num{color:var(--green3);}
-.stat-box.red-stat .num{color:var(--red2);}
-.stat-box.teal-stat .num{color:var(--teal2);}
+/* ═══════════════════════════════════════════
+   DROP ZONE
+═══════════════════════════════════════════ */
+.drop-zone {
+  border: 2px dashed rgba(255,215,0,.3); border-radius: 14px;
+  padding: 42px 22px; text-align: center; cursor: pointer;
+  transition: all .2s; margin-bottom: 16px;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--gold); background: rgba(255,215,0,.07);
+  box-shadow: inset 0 0 40px rgba(255,215,0,.05);
+}
+.drop-zone .dz-icon { font-size: 3rem; display: block; margin-bottom: 10px; }
+.drop-zone p { color: var(--muted); font-size: 1rem; }
+.drop-zone strong { color: var(--gold2); }
 
-/* DROP ZONE */
-.drop-zone{border:2px dashed rgba(212,175,55,.22);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
-.drop-zone:hover,.drop-zone.dragover{border-color:var(--gold);background:rgba(212,175,55,.05);}
-.drop-zone .dz-icon{font-size:2.2rem;display:block;margin-bottom:6px;}
-.drop-zone p{color:var(--muted);font-size:.84rem;}
-.progress-wrap{background:rgba(255,255,255,.06);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .3s;}
+/* ═══════════════════════════════════════════
+   HADIAH ITEMS — List layout (untuk panel hadiah)
+═══════════════════════════════════════════ */
+.hadiah-item {
+  background: rgba(11,36,25,.7); border: 1px solid rgba(255,215,0,.15);
+  border-radius: 14px; padding: 16px 20px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 14px;
+  transition: border-color .2s;
+}
+.hadiah-item:hover { border-color: rgba(255,215,0,.3); }
+.hadiah-num {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 1rem; flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(0,168,58,.4);
+}
+.hadiah-info { flex: 1; min-width: 0; }
+.hadiah-info strong { font-size: 1.05rem; display: block; }
+.hadiah-info .meta { color: var(--muted); font-size: .85rem; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* HADIAH ITEM */
-.hadiah-item{background:rgba(6,13,10,.6);border:1px solid rgba(212,175,55,.1);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.hadiah-num{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;min-width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;}
-.hadiah-info{flex:1;min-width:120px;}
-.hadiah-info strong{font-size:.88rem;display:block;}
-.hadiah-info .meta{color:var(--muted);font-size:.72rem;margin-top:2px;}
+/* ═══════════════════════════════════════════
+   UNDIAN PRIZE CARDS — Satu baris bergerak (carousel horizontal)
+═══════════════════════════════════════════ */
+.dual-prize-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr);
+  gap: 22px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+.prize-frame {
+  position: relative;
+  background: linear-gradient(180deg, rgba(20,59,38,.55), rgba(11,36,25,.55));
+  border: 1px solid rgba(255,215,0,.22);
+  border-radius: 22px;
+  padding: 18px 0 var(--prize-pad-bot);
+  display: flex; flex-direction: column;
+  height: var(--panel-h); /* = title + 3 kartu + 2 gap + padding bawah */
+  box-shadow: 0 6px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter: blur(6px);
+}
+.prize-frame-title {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 24px 14px;
+  font-size: .92rem; font-weight: 900; color: var(--gold2);
+  text-transform: uppercase; letter-spacing: .08em;
+  flex-wrap: nowrap; /* semua dalam satu baris */
+}
+.prize-frame-title .pf-icon { font-size: 1.15rem; }
+.prize-frame-title .pf-count {
+  font-size: .78rem; font-weight: 800; letter-spacing: .03em;
+  color: var(--muted); text-transform: none;
+  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.18);
+  border-radius: 20px; padding: 3px 12px;
+  flex-shrink: 0;
+}
+.prize-frame-title .pf-spacer {
+  flex: 1; /* mendorong count & tombol ke ujung kanan */
+  min-width: 4px;
+}
+.prize-track-viewport {
+  width: 100%;
+  flex: none; /* jangan stretch — pakai height eksplisit */
+  height: var(--viewport-3); /* persis tinggi 3 kartu + 2 gap */
+  min-height: 0;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  padding: 4px 24px;
+  position: relative;
+}
+.prize-frame::before, .prize-frame::after {
+  content: ''; position: absolute; left: 1px; right: 1px; height: 44px;
+  z-index: 3; pointer-events: none;
+}
+.prize-frame::before {
+  top: 50px; border-radius: 22px 22px 0 0;
+  background: linear-gradient(180deg, rgba(15,47,30,.9), rgba(15,47,30,0));
+}
+.prize-frame::after {
+  bottom: 1px; border-radius: 0 0 22px 22px;
+  background: linear-gradient(0deg, rgba(15,47,30,.9), rgba(15,47,30,0));
+}
+.prize-grid {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 18px;
+  transition: transform .15s linear;
+}
+.prize-card {
+  background: rgba(8,20,10,.85);
+  border: 1px solid rgba(255,215,0,.18);
+  border-radius: 18px; padding: 0; overflow: hidden;
+  transition: all .25s; position: relative;
+  display: flex; flex-direction: row; align-items: stretch;
+  width: 100%;
+  height: var(--prize-card-h); /* tinggi tetap agar viewport 3-kartu akurat */
+  flex-shrink: 0;
+}
+.prize-card:hover {
+  border-color: rgba(255,215,0,.4);
+  box-shadow: 0 8px 32px rgba(255,215,0,.12);
+}
+.prize-card.done {
+  border-color: rgba(0,168,58,.3);
+  opacity: .65;
+}
+.prize-card.done:hover { opacity: .85; }
 
-/* LOADING */
-#loading-overlay{position:fixed;inset:0;z-index:9995;background:rgba(6,13,10,.9);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
-#loading-overlay.show{display:flex;}
-.spinner{width:46px;height:46px;border:3px solid rgba(212,175,55,.13);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{color:var(--gold);font-size:.86rem;font-weight:700;letter-spacing:.06em;}
+/* Pita diagonal "WINNER" — menandai hadiah yang sudah dimenangkan */
+.prize-card-ribbon {
+  position: absolute; top: 0; right: 0;
+  width: 130px; height: 130px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 6;
+}
+.prize-card-ribbon span {
+  position: absolute;
+  top: 22px; right: -40px;
+  width: 170px;
+  transform: rotate(45deg);
+  text-align: center;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff;
+  font-size: .7rem; font-weight: 900; letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 5px 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  border-top: 1px solid rgba(255,255,255,.35);
+  border-bottom: 1px solid rgba(0,0,0,.25);
+}
+.prize-card-ribbon span::before,
+.prize-card-ribbon span::after {
+  content: '';
+  position: absolute; top: 0; width: 0; height: 0;
+  border-style: solid;
+}
+.prize-card-ribbon span::before {
+  left: 0; border-width: 0 0 7px 7px;
+  border-color: transparent transparent #00701F transparent;
+}
+.prize-card-ribbon span::after {
+  right: 0; border-width: 0 7px 7px 0;
+  border-color: transparent #00701F transparent transparent;
+}
+.prize-card.prize-card-reeling {
+  transition: border-color .06s linear, box-shadow .06s linear;
+}
+.prize-card.prize-card-selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 36px rgba(255,215,0,.5), 0 0 70px rgba(255,215,0,.18);
+  z-index: 5;
+  transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+  transform: scale(1.02);
+}
+.prize-card.prize-card-selected .prize-card-header {
+  background: linear-gradient(135deg, rgba(255,215,0,.22), rgba(255,215,0,.06));
+}
+.prize-card.prize-card-locked {
+  opacity: .4; filter: grayscale(.3);
+  pointer-events: none;
+}
+.prize-card-header {
+  background: linear-gradient(135deg, rgba(255,215,0,.1), rgba(255,215,0,.04));
+  padding: 16px 20px; text-align: left;
+  border-right: 1px solid rgba(255,215,0,.1);
+  display: flex; flex-direction: column; justify-content: center;
+  flex: 0 0 160px; min-width: 140px;
+}
+.prize-card-rank {
+  font-size: .72rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .1em; font-weight: 700; margin-bottom: 4px;
+}
+.prize-card-name {
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem); font-weight: 900;
+  color: var(--gold); line-height: 1.2;
+}
+.prize-card-body {
+  padding: 14px 18px; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 8px;
+}
+.prize-card-desc {
+  font-size: .92rem; color: var(--muted); line-height: 1.4;
+}
+.prize-card-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.prize-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px; border-radius: 16px;
+  font-size: .78rem; font-weight: 800;
+}
+.prize-tag.tag-sponsor {
+  background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.2);
+  color: var(--gold2);
+}
+.prize-tag.tag-qty {
+  background: rgba(0,168,58,.1); border: 1px solid rgba(0,168,58,.2);
+  color: var(--green3);
+}
+.prize-card-action {
+  padding: 14px 18px; flex: 0 0 auto;
+  display: flex; align-items: center;
+  border-left: 1px solid rgba(255,215,0,.08);
+}
+.prize-card-action .btn {
+  justify-content: center; white-space: nowrap;
+  padding: 11px 18px; font-size: .92rem;
+}
+.prize-card-status {
+  /* badge dipindah ke dalam .prize-card-meta — tidak lagi absolute */
+  display: inline-flex;
+}
 
-/* SLOT */
-#slot-overlay{position:fixed;inset:0;z-index:9996;background:#071409;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:16px;overflow-y:auto;}
-#slot-overlay.show{display:flex;}
-.slot-header{text-align:center;}
-#slot-hadiah-label{font-size:.78rem;color:var(--green3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
-#slot-title{font-family:var(--font-display);font-size:clamp(.95rem,3.5vw,1.8rem);color:var(--gold);font-weight:700;}
-.slot-machine-wrap{background:rgba(13,26,20,.9);border:2px solid var(--gold);border-radius:16px;padding:20px 18px;text-align:center;width:min(96vw,460px);box-shadow:0 0 60px rgba(212,175,55,.15);position:relative;}
-#slot-index-label{font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
-#slot-kk{font-family:var(--font-mono);font-size:clamp(1.3rem,6vw,2.4rem);color:var(--gold2);letter-spacing:.1em;min-height:2.8rem;word-break:break-all;}
-#slot-kk.final{color:#fff;animation:pulseKK .35s ease;}
-@keyframes pulseKK{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
-#slot-nama{font-size:clamp(.95rem,3vw,1.5rem);color:#fff;font-weight:800;margin-top:6px;min-height:1.6rem;}
-#slot-kel{font-size:.82rem;color:var(--muted);margin-top:3px;}
-#slot-sisa{font-size:.74rem;color:var(--muted);margin-top:10px;}
-.slot-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
-.slot-close{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.07);border:none;color:var(--muted);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;}
-.multi-list{max-height:180px;overflow-y:auto;margin:8px 0;}
-.multi-item{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.13);border-radius:7px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
-.multi-item .mkk{font-family:var(--font-mono);font-size:.78rem;color:var(--gold2);flex:1;}
-.multi-item .mnm{font-size:.84rem;font-weight:700;}
+/* ═══════════════════════════════════════════
+   ══════════════════════════════════════════
+   SLOT MACHINE OVERLAY — Responsif fit layar
+   Semua elemen tampil tanpa scroll
+   ══════════════════════════════════════════
+═══════════════════════════════════════════ */
+#slot-overlay {
+  position: fixed; inset: 0; z-index: 9996;
+  background: radial-gradient(ellipse at center, #143B26 0%, #0B2419 100%);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; padding: 12px 16px;
+}
+#slot-overlay.show { display: flex; }
 
-/* FULLSCREEN */
-#fullscreen-overlay{position:fixed;inset:0;z-index:9997;background:radial-gradient(ellipse at 30% 20%,#0a2010 0%,#040c06 60%,#020808 100%);display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:70px 20px 24px;overflow-y:auto;}
-#fullscreen-overlay.show{display:flex;animation:fsIn .4s ease;}
-@keyframes fsIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
-.fs-top-bar{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:rgba(4,12,6,.8);backdrop-filter:blur(8px);}
-#fs-panitia{font-size:.75rem;color:rgba(212,175,55,.6);}
-.fs-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--muted);border-radius:7px;padding:6px 13px;cursor:pointer;font-family:var(--font-body);font-size:.8rem;min-height:34px;}
-#fs-bismillah{font-size:clamp(.9rem,2.5vw,1.6rem);color:rgba(212,175,55,.55);margin-bottom:10px;}
-#fs-event-name{font-size:clamp(.7rem,1.5vw,.9rem);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
-#fs-title{font-family:var(--font-display);font-size:clamp(1.1rem,4vw,2.8rem);color:var(--gold);margin-bottom:14px;font-weight:700;}
-#fs-hadiah-name{font-size:clamp(.82rem,2.2vw,1.2rem);color:var(--green3);background:rgba(34,168,90,.09);border:1px solid rgba(34,168,90,.22);padding:6px 22px;border-radius:30px;margin-bottom:20px;display:inline-block;}
-#fs-kk{font-family:var(--font-mono);font-size:clamp(2rem,9vw,6rem);color:var(--gold2);letter-spacing:.12em;line-height:1;margin-bottom:10px;word-break:break-all;}
-#fs-nama{font-size:clamp(1.4rem,5vw,3.5rem);font-weight:800;color:#fff;margin-bottom:6px;}
-#fs-kel{font-size:clamp(.76rem,1.8vw,1.1rem);color:var(--muted);}
-#fs-ucapan{font-size:clamp(.8rem,1.8vw,1.05rem);color:rgba(212,175,55,.65);margin-top:18px;font-style:italic;}
-#fs-multi-list{width:min(94vw,680px);}
-.fs-multi-item{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.18);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;text-align:left;}
-.fs-multi-num{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;min-width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.86rem;flex-shrink:0;}
-.fs-multi-kk{font-family:var(--font-mono);font-size:clamp(.84rem,2vw,1.1rem);color:var(--gold2);}
-.fs-multi-nm{font-size:clamp(.9rem,2.2vw,1.3rem);font-weight:800;}
-.fs-multi-kel{font-size:.78rem;color:var(--muted);}
+/* Header slot */
+.slot-header { text-align: center; flex-shrink: 0; }
+#slot-hadiah-label {
+  font-size: clamp(1.4rem, 4vw, 3rem);
+  color: var(--green3); font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; margin-bottom: 4px;
+  text-shadow: 0 0 30px rgba(107,255,170,.6);
+}
+#slot-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
+  color: var(--gold); opacity: .6;
+  text-shadow: 0 0 40px rgba(255,215,0,.4);
+  line-height: 1.2;
+}
 
-/* CONFETTI */
-#confetti-box{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9998;}
-.confetti-piece{position:absolute;top:-20px;animation:confettiFall linear forwards;border-radius:3px;}
-@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+/* Kotak mesin slot utama — fit layar */
+.slot-machine-wrap {
+  background: rgba(10,26,13,.95);
+  border: 3px solid var(--gold);
+  border-radius: 20px; padding: clamp(14px, 2.5vw, 32px) clamp(20px, 4vw, 60px);
+  text-align: center; width: min(94vw, 860px);
+  box-shadow:
+    0 0 80px rgba(255,215,0,.2),
+    0 0 40px rgba(255,215,0,.1),
+    inset 0 0 40px rgba(0,0,0,.6);
+  position: relative; overflow: hidden; flex-shrink: 1;
+}
+.slot-machine-wrap::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.1) 0%, transparent 55%);
+}
 
-/* SETTINGS */
-.settings-section{margin-bottom:18px;}
-.settings-section h3{font-size:.8rem;color:var(--gold2);font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;padding-bottom:6px;border-bottom:1px solid rgba(212,175,55,.1);}
-.change-pw-box{background:rgba(6,13,10,.5);border:1px dashed rgba(212,175,55,.18);border-radius:10px;padding:14px;margin-top:10px;}
-.change-pw-box h4{font-size:.78rem;color:var(--gold2);font-weight:800;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;}
-.pin-settings-wrap{background:rgba(6,13,10,.5);border:1px dashed rgba(212,175,55,.18);border-radius:10px;padding:14px;margin-top:10px;}
-.pin-settings-wrap h4{font-size:.78rem;color:var(--gold2);font-weight:800;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;}
+/* Label indeks pemenang — hidden by default, shown only on reveal */
+#slot-index-label {
+  font-size: clamp(0.8rem, 1.8vw, 1.2rem);
+  color: var(--muted); letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 6px; font-weight: 700;
+  display: none;
+}
 
-/* ✅ SETTING SUARA */
-.sound-themes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
-@media(min-width:480px){.sound-themes{grid-template-columns:repeat(4,1fr);}}
-.sound-theme-btn{padding:12px 8px;border:2px solid rgba(212,175,55,.15);border-radius:10px;background:rgba(6,13,10,.5);color:var(--text);font-family:var(--font-body);font-size:.78rem;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
-.sound-theme-btn .st-icon{font-size:1.5rem;}
-.sound-theme-btn .st-name{font-size:.76rem;font-weight:800;}
-.sound-theme-btn .st-desc{font-size:.66rem;color:var(--muted);}
-.sound-theme-btn:hover{border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.06);}
-.sound-theme-btn.active{border-color:var(--gold);background:rgba(212,175,55,.12);}
-.sound-theme-btn.active .st-name{color:var(--gold);}
-.btn-preview-sound{padding:7px 14px;border:1px solid rgba(212,175,55,.22);border-radius:7px;background:transparent;color:var(--gold2);font-family:var(--font-body);font-size:.78rem;font-weight:700;cursor:pointer;margin-top:4px;}
+/* Nomor KK — diperkecil, bukan prioritas visual */
+#slot-kk {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(1.2rem, 3vw, 2.2rem);
+  color: var(--gold2); letter-spacing: .1em;
+  min-height: 1.2em; line-height: 1.1;
+  text-shadow:
+    0 0 30px rgba(255,229,92,.5),
+    0 0 60px rgba(255,215,0,.2);
+  transition: color .08s; opacity: .85;
+}
+#slot-kk.final {
+  color: #fff; opacity: 1;
+  text-shadow:
+    0 0 40px rgba(255,255,255,.5),
+    0 0 80px rgba(255,215,0,.3);
+  animation: pulseKK .5s ease;
+}
+@keyframes pulseKK { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
 
-/* LIVE VIEW */
-#liveview-overlay{position:fixed;inset:0;z-index:9989;background:var(--dark);display:none;flex-direction:column;overflow-y:auto;}
-#liveview-overlay.show{display:flex;}
-.lv-topbar{position:sticky;top:0;z-index:10;background:rgba(6,13,10,.97);backdrop-filter:blur(10px);border-bottom:2px solid var(--gold);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
-.lv-label{font-size:.8rem;color:var(--gold2);font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
-.lv-close{padding:7px 13px;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:7px;color:#fff;font-family:var(--font-body);font-weight:800;font-size:.8rem;cursor:pointer;min-height:34px;}
+/* Nama pemenang — PRIORITAS BESAR */
+#slot-nama {
+  font-size: clamp(2rem, 5.5vw, 5rem);
+  color: #fff; font-weight: 900; margin-top: 8px; min-height: 1.1em;
+  text-shadow: 0 0 40px rgba(255,255,255,.3), 0 2px 8px rgba(0,0,0,.8);
+  line-height: 1.15;
+}
+/* Kelurahan/Alamat — cukup besar */
+#slot-kel {
+  font-size: clamp(1.1rem, 3vw, 2.2rem);
+  color: var(--green3); margin-top: 6px;
+  font-weight: 700; text-shadow: 0 0 20px rgba(107,255,170,.4);
+}
+#slot-sisa {
+  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+  color: var(--muted); margin-top: 8px; font-weight: 600;
+}
 
-@media print{body{background:#fff;color:#000}.admin-tabs-wrap,.admin-topbar,.btn,#admin-trigger{display:none}.tab-panel{display:block!important}table{font-size:10pt}}
+/* ─── STOP MANUAL BUTTON ─── */
+#btn-stop-manual {
+  font-size: clamp(1.1rem, 2.8vw, 1.8rem);
+  padding: clamp(10px, 2vw, 20px) clamp(30px, 6vw, 70px);
+  border-radius: 14px; flex-shrink: 0;
+  animation: pulseStop 1.2s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(255,140,0,.6), 0 0 80px rgba(255,140,0,.3);
+  letter-spacing: .06em;
+}
+@keyframes pulseStop {
+  0%,100% { box-shadow: 0 0 30px rgba(255,140,0,.5), 0 0 60px rgba(255,140,0,.25); transform: scale(1); }
+  50%      { box-shadow: 0 0 60px rgba(255,140,0,.8), 0 0 120px rgba(255,140,0,.4); transform: scale(1.04); }
+}
+
+/* Keterangan stop manual */
+#slot-stop-info {
+  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+  color: rgba(255,165,51,.8); text-align: center;
+  font-style: italic; margin-top: -4px; flex-shrink: 0;
+}
+
+/* Tombol-tombol aksi slot */
+.slot-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  justify-content: center; margin-top: 4px; flex-shrink: 0;
+}
+.slot-close {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(255,255,255,.1); border: none; color: var(--muted);
+  border-radius: 8px; width: 32px; height: 32px;
+  cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.slot-close:hover { background: rgba(204,17,17,.4); color: #fff; }
+
+/* Multi-pemenang list di slot */
+.multi-list { max-height: 180px; overflow-y: auto; margin: 8px 0; }
+.multi-item {
+  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.18);
+  border-radius: 8px; padding: 6px 12px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 10px;
+}
+.multi-item .mkk { font-family: 'Courier New',monospace; font-size: clamp(0.85rem, 1.8vw, 1.2rem); color: var(--gold2); flex: 1; }
+.multi-item .mnm { font-size: clamp(0.85rem, 1.8vw, 1.2rem); font-weight: 800; }
+
+/* Fullscreen overlay removed — not used */
+
+/* ═══════════════════════════════════════════
+   CONFETTI
+═══════════════════════════════════════════ */
+#confetti-box { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9998; }
+.confetti-piece {
+  position: absolute; top: -20px;
+  animation: confettiFall linear forwards;
+  border-radius: 3px;
+}
+@keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+/* ═══════════════════════════════════════════
+   INFO BOX PERMANEN — Notifikasi aturan baru
+═══════════════════════════════════════════ */
+.info-rule {
+  background: rgba(255,140,0,.12); border: 1px solid rgba(255,140,0,.3);
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+  font-size: .95rem; color: var(--orange2); display: flex; gap: 12px; align-items: flex-start;
+}
+.info-rule .icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ═══════════════════════════════════════════
+   SETTINGS TAB
+═══════════════════════════════════════════ */
+.settings-section { margin-bottom: 22px; }
+.settings-section h3 {
+  font-size: .9rem; color: var(--gold2); font-weight: 800; margin-bottom: 14px;
+  text-transform: uppercase; letter-spacing: .07em;
+  padding-bottom: 9px; border-bottom: 1px solid rgba(255,215,0,.12);
+}
+
+/* ═══════════════════════════════════════════
+   SIAP UNDI — Tombol diperkecil, inline di header panel kanan
+═══════════════════════════════════════════ */
+.siap-undi-wrap {
+  /* wrap tidak lagi digunakan sebagai footer panel — hapus margin/padding lama */
+  display: none;
+}
+.btn-siap-undi-inline {
+  background: linear-gradient(135deg, #7B2FF7, #C850C0, #FF6B6B);
+  color: #fff; border: none; padding: 5px 14px; border-radius: 10px;
+  font-family: 'Nunito', sans-serif; font-weight: 900; font-size: .78rem;
+  cursor: pointer; transition: all .25s;
+  box-shadow: 0 2px 12px rgba(200,80,192,.3);
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap; flex-shrink: 0;
+  animation: shimmerAcak 3s ease-in-out infinite;
+}
+@keyframes shimmerAcak {
+  0%,100% { box-shadow: 0 2px 12px rgba(200,80,192,.3); }
+  50%     { box-shadow: 0 2px 20px rgba(123,47,247,.45), 0 0 28px rgba(255,107,107,.15); }
+}
+.btn-siap-undi-inline:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 4px 20px rgba(200,80,192,.5);
+}
+.btn-siap-undi-inline:disabled {
+  opacity: .5; cursor: not-allowed; transform: none; animation: none;
+}
+
+/* ═══════════════════════════════════════════
+   GRAND PRIZE — Hadiah Utama (sorotan terpisah)
+   Tidak ikut "Siap Undi" / track acak hadiah biasa.
+   Terkunci sampai semua hadiah biasa berstatus Selesai.
+═══════════════════════════════════════════ */
+.grand-frame {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,215,0,.10), rgba(20,59,38,.55) 40%, rgba(11,36,25,.6));
+  border: 2px solid rgba(255,215,0,.45);
+  border-radius: 24px;
+  padding: 22px 22px 22px;
+  display: flex; flex-direction: column;
+  height: var(--panel-h); /* sejajar dengan prize-frame */
+  box-shadow: 0 0 50px rgba(255,215,0,.12), 0 8px 36px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter: blur(6px);
+}
+.grand-frame::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.14) 0%, transparent 60%);
+}
+.grand-frame-title {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px; flex: 0 0 auto;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.05rem, 2.6vw, 1.5rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,.5);
+  letter-spacing: .05em;
+}
+.grand-frame-title .gf-icon { font-size: 1.2em; }
+.grand-frame-title .gf-count {
+  margin-left: auto;
+  font-family: 'Nunito', sans-serif;
+  font-size: .78rem; font-weight: 800; letter-spacing: .03em;
+  color: var(--muted); text-transform: none;
+  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.22);
+  border-radius: 20px; padding: 4px 14px;
+}
+.grand-lock-note {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,140,0,.1); border: 1px solid rgba(255,140,0,.28);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; flex: 0 0 auto;
+  font-size: .87rem; color: var(--orange2); font-weight: 700;
+}
+#grand-list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,215,0,.3) transparent;
+}
+#grand-list::-webkit-scrollbar { width: 6px; }
+#grand-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 4px; }
+.grand-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.grand-card {
+  background: rgba(8,20,10,.88);
+  border: 2px solid rgba(255,215,0,.35);
+  border-radius: 18px; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  transition: all .25s;
+  box-shadow: 0 0 0 rgba(255,215,0,0);
+}
+.grand-card:not(.grand-locked):not(.done):hover {
+  border-color: var(--gold);
+  box-shadow: 0 8px 28px rgba(255,215,0,.18);
+}
+.grand-card.grand-locked { opacity: .55; filter: grayscale(.25); }
+.grand-card.done { border-color: rgba(0,168,58,.4); opacity: .75; }
+.grand-card-star {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  font-size: 1.15rem; filter: drop-shadow(0 0 8px rgba(255,215,0,.7));
+}
+.grand-card-header {
+  background: linear-gradient(135deg, rgba(255,215,0,.16), rgba(255,215,0,.04));
+  padding: 20px 18px 12px; text-align: center;
+  border-bottom: 1px solid rgba(255,215,0,.16);
+}
+.grand-card-rank {
+  font-size: .74rem; color: var(--gold2); text-transform: uppercase;
+  letter-spacing: .12em; font-weight: 900; margin-bottom: 6px;
+}
+.grand-card-name {
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 900;
+  color: var(--gold); line-height: 1.2;
+  text-shadow: 0 0 20px rgba(255,215,0,.3);
+}
+.grand-card-body {
+  padding: 14px 18px 14px; flex: 1;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.grand-card-desc { font-size: .9rem; color: var(--muted); line-height: 1.4; }
+.grand-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grand-card-action { padding: 0 18px 18px; margin-top: auto; }
+.grand-card-action .btn { width: 100%; justify-content: center; padding: 12px 14px; font-size: .94rem; }
+.grand-card-action .btn-locked-note {
+  font-size: .75rem; color: var(--muted); text-align: center; margin-top: 8px;
+}
+.grand-card-ribbon {
+  position: absolute; top: 0; right: 0; width: 130px; height: 130px;
+  overflow: hidden; pointer-events: none; z-index: 6;
+}
+.grand-card-ribbon span {
+  position: absolute; top: 22px; right: -40px; width: 170px;
+  transform: rotate(45deg); text-align: center;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; font-size: .7rem; font-weight: 900; letter-spacing: .1em;
+  text-transform: uppercase; padding: 5px 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  border-top: 1px solid rgba(255,255,255,.35);
+  border-bottom: 1px solid rgba(0,0,0,.25);
+}
+.toggle-utama-wrap {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,215,0,.06); border: 1px solid rgba(255,215,0,.2);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+}
+.toggle-utama-wrap input[type=checkbox] {
+  width: 20px; height: 20px; accent-color: var(--gold); cursor: pointer;
+}
+.toggle-utama-wrap label {
+  margin: 0; cursor: pointer; text-transform: none; letter-spacing: 0;
+  font-size: .95rem; color: var(--gold2); font-weight: 800;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .dual-prize-grid { grid-template-columns: 1fr; }
+  /* Di layar sempit, turunkan tinggi kartu agar 3 kartu tidak terlalu panjang */
+  :root {
+    --prize-card-h: 96px;
+    --prize-title-h: 50px;
+  }
+}
+@media (max-width: 700px) {
+  .card { padding: 18px; }
+  .form-row { flex-direction: column; }
+  .stats-row { gap: 10px; }
+  .side-trigger { width: 18px; }
+  .slot-machine-wrap { padding: 14px 10px; }
+  #slot-hadiah-label { font-size: clamp(0.9rem, 5vw, 1.3rem); }
+  #slot-kk { font-size: clamp(0.95rem, 4vw, 1.4rem); letter-spacing: .04em; }
+  #slot-nama { font-size: clamp(1.4rem, 8vw, 2.8rem); }
+  #slot-kel  { font-size: clamp(0.9rem, 5vw, 1.5rem); }
+  #btn-stop-manual { font-size: clamp(0.9rem, 5vw, 1.3rem); padding: 10px 30px; }
+  .side-menu-btn { font-size: .78rem; padding: 10px 12px; }
+  .panel-overlay { width: 92vw; padding: 18px 14px; }
+  .grand-frame { padding: 16px 14px 18px; }
+  /* Kartu jadi kolom di mobile — tinggi auto, viewport dibebaskan */
+  .prize-card { flex-direction: column; height: auto; }
+  .prize-card-header { border-right: none; border-bottom: 1px solid rgba(255,215,0,.1); flex: 0 0 auto; }
+  .prize-card-action { border-left: none; border-top: 1px solid rgba(255,215,0,.08); }
+  .btn-siap-undi-inline { font-size: .72rem; padding: 4px 10px; }
+  /* Di mobile kolom-kartu lebih tinggi — bebaskan viewport dari constraint */
+  .prize-track-viewport { height: 320px; }
+  .prize-frame, .grand-frame { height: auto; min-height: 360px; }
+}
+
+/* ═══════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════ */
+@media print {
+  body { background: #fff; color: #000; }
+  #app { max-width: 100%; }
+  .side-menu, .side-trigger, .btn, header { display: none; }
+  .tab-panel { display: block !important; }
+  table { font-size: 10pt; }
+}
+
+/* ─── TOAST ─────────────────────────────── */
+#toast-container {
+  position: fixed; bottom: 28px; right: 28px; z-index: 10000;
+  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.toast {
+  background: rgba(10,26,13,.97); border: 1px solid rgba(255,215,0,.35);
+  border-radius: 12px; padding: 14px 22px; font-size: 1rem; color: var(--text);
+  pointer-events: all; animation: toastIn .3s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5); max-width: 360px;
+  display: flex; align-items: center; gap: 12px; font-weight: 700;
+}
+.toast.removing { animation: toastOut .3s ease forwards; }
+@keyframes toastIn  { from { opacity:0; transform:translateX(24px);} to { opacity:1; transform:none;} }
+@keyframes toastOut { to   { opacity:0; transform:translateX(24px);} }
 </style>
 </head>
 <body>
@@ -325,72 +1037,18 @@ tr:hover td{background:rgba(212,175,55,.03);}
 <div id="confetti-box"></div>
 <div id="toast-container"></div>
 
-<div id="loading-overlay"><div class="spinner"></div><div class="loading-text" id="loading-text">MEMUAT...</div></div>
-
-<!-- UNDI ULANG OVERLAY -->
-<div id="undi-ulang-overlay">
-  <div class="uu-icon">🎰</div>
-  <div class="uu-text">MENGUNDI ULANG...</div>
-  <div class="uu-sub" id="uu-sub">Mencari pengganti pemenang yang tidak hadir</div>
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">MEMPROSES...</div>
 </div>
 
-<!-- PIN MODAL -->
-<div id="pin-modal" class="modal-backdrop">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-icon">🔢</span>
-      <div class="modal-title">Masukkan PIN Undian</div>
-      <div class="modal-sub">PIN diperlukan untuk memulai pengundian.</div>
-    </div>
-    <div class="modal-body">
-      <div class="pin-hadiah-name" id="pin-hadiah-name">—</div>
-      <div id="pin-error" class="pin-error">PIN salah. Silakan coba lagi.</div>
-      <div class="pin-dots">
-        <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-        <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-      </div>
-      <div class="pin-pad">
-        <button class="pin-key" onclick="pinInput('1')">1</button>
-        <button class="pin-key" onclick="pinInput('2')">2</button>
-        <button class="pin-key" onclick="pinInput('3')">3</button>
-        <button class="pin-key" onclick="pinInput('4')">4</button>
-        <button class="pin-key" onclick="pinInput('5')">5</button>
-        <button class="pin-key" onclick="pinInput('6')">6</button>
-        <button class="pin-key" onclick="pinInput('7')">7</button>
-        <button class="pin-key" onclick="pinInput('8')">8</button>
-        <button class="pin-key" onclick="pinInput('9')">9</button>
-        <button class="pin-key" onclick="pinClear()" style="font-size:.72rem;color:var(--muted)">CLR</button>
-        <button class="pin-key" onclick="pinInput('0')">0</button>
-        <button class="pin-key del" onclick="pinBackspace()">⌫</button>
-      </div>
-    </div>
-    <div class="modal-footer"><div class="pin-cancel" onclick="tutupPinModal()">Batal</div></div>
-  </div>
-</div>
-
-<!-- KONFIRMASI PUBLIK — dengan checkbox per pemenang & tombol undi ulang -->
-<div id="konfirmasi-publik-modal" class="modal-backdrop">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <span class="modal-icon">🏆</span>
-      <div class="modal-title" id="kp-title">Pemenang Diumumkan!</div>
-      <div class="modal-sub" id="kp-sub">Centang pemenang yang HADIR. Yang tidak dicentang akan diundi ulang.</div>
-    </div>
-    <div class="modal-body">
-      <div class="konfirm-note">☑ Centang nama yang hadir. Pemenang yang tidak hadir otomatis diundi ulang dan tidak diikutkan undian berikutnya.</div>
-      <div class="konfirm-pemenang-list" id="kp-list"></div>
-      <div class="konfirm-btn-row">
-        <button class="btn-konfirm-hadir" onclick="submitKonfirmasiPublik()">✅ Konfirmasi</button>
-        <button class="btn-konfirm-ulang" onclick="semuaTidakHadir()">🔄 Semua Tidak Hadir</button>
-      </div>
-      <button class="btn-konfirm-skip" onclick="skipKonfirmasiPublik()">Lewati — Konfirmasi nanti oleh admin</button>
-    </div>
-  </div>
-</div>
-
-<!-- SLOT MACHINE -->
+<!-- ═══════════════════════════════════════
+     SLOT MACHINE OVERLAY (TAMPILAN ACAK)
+     Diperbesar ±3× untuk infokus / layar besar
+════════════════════════════════════════ -->
 <div id="slot-overlay">
-  <button class="slot-close" onclick="tutupSlotAktif()">✕</button>
+  <button class="slot-close" onclick="tutupSlot()" title="Tutup">✕</button>
   <div class="slot-header">
     <div id="slot-hadiah-label">🎁 Hadiah</div>
     <div id="slot-title">PENGUNDIAN DOORPRIZE</div>
@@ -403,760 +1061,1362 @@ tr:hover td{background:rgba(212,175,55,.03);}
     <div id="slot-sisa"></div>
     <div id="slot-multi-list" class="multi-list" style="display:none"></div>
   </div>
+  <button id="btn-stop-manual" class="btn btn-orange" onclick="stopManual()" style="display:none">
+    🛑 STOP
+  </button>
+  <p id="slot-stop-info" style="display:none"></p>
   <div class="slot-actions" id="slot-actions"></div>
 </div>
 
-<!-- FULLSCREEN -->
-<div id="fullscreen-overlay">
-  <div class="fs-top-bar">
-    <span id="fs-panitia"></span>
-    <button class="fs-close" onclick="tutupFullscreen()">✕ Tutup (ESC)</button>
-  </div>
-  <div id="fs-bismillah">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
-  <div id="fs-event-name"></div>
-  <div id="fs-title">🏆 SELAMAT PEMENANG! 🏆</div>
-  <div id="fs-hadiah-name"></div>
-  <div id="fs-kk" style="display:none"></div>
-  <div id="fs-nama" style="display:none"></div>
-  <div id="fs-kel" style="display:none"></div>
-  <div id="fs-multi-list" style="display:none"></div>
-  <div id="fs-ucapan">Semoga bermanfaat dan membawa keberkahan 🌙</div>
-</div>
+<!-- ═══════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="app">
+  <header>
+    <h1 id="h-nama-acara">Undian Doorprize — Tahun Baru Islam</h1>
+    <div class="header-arabic" id="h-tahun">مُحَرَّم ١٤٤٧ هـ</div>
+    <div class="header-sub" id="h-tema">Hijrah Menuju Kebaikan</div>
+    <div id="header-panitia">—</div>
+  </header>
 
-<!-- LOGIN -->
-<div id="login-modal" class="modal-backdrop">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-icon">🌙</span>
-      <div class="modal-title">Panel Admin</div>
-      <div class="modal-sub">Masukkan password untuk mengakses dashboard panitia</div>
+  <!-- ════════ TAB PESERTA ════════ -->
+  <div id="tab-peserta" class="tab-panel">
+    <div class="stats-row">
+      <div class="stat-box gold-stat"><div class="num" id="s-total">0</div><div class="lbl">Total Peserta</div></div>
+      <div class="stat-box green-stat"><div class="num" id="s-aktif">0</div><div class="lbl">Sisa Pool</div></div>
+      <div class="stat-box teal-stat"><div class="num" id="s-menang">0</div><div class="lbl">Sudah Terpilih</div></div>
+      <div class="stat-box red-stat"><div class="num" id="s-sisa">0</div><div class="lbl">Belum Undi</div></div>
     </div>
-    <div class="modal-body" style="text-align:left">
-      <div id="login-error" class="login-error">Password salah.</div>
-      <label class="login-lbl">Password Admin</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="btn-login" id="login-btn" onclick="doLogin()">🔓 Masuk ke Dashboard</button>
-    </div>
-    <div class="modal-footer" style="padding-top:0"><div class="login-cancel" onclick="tutupLogin()">Batal</div></div>
-  </div>
-</div>
 
-<!-- PUBLIC VIEW -->
-<div id="public-view">
-  <div class="ticker-wrap"><span class="ticker" id="pub-ticker">☽ Selamat Datang &nbsp;|&nbsp; 🌙 Barakallahu Fiikum &nbsp;|&nbsp; 🎊 Selamat kepada para pemenang &nbsp;☽</span></div>
-  <div class="pub-header">
-    <span class="pub-crescent">☽</span>
-    <h1 class="pub-title" id="pub-nama-acara">Undian Doorprize — Tahun Baru Islam</h1>
-    <div class="pub-arabic" id="pub-tahun">مُحَرَّم ١٤٤٧ هـ</div>
-    <div class="pub-tema" id="pub-tema"></div>
-    <div class="pub-org" id="pub-org">—</div>
-  </div>
-  <div class="pub-main">
-    <div class="pub-stats">
-      <div class="pub-stat gold-s"><div class="num" id="pub-s-total">0</div><div class="lbl">Total Peserta</div></div>
-      <div class="pub-stat green-s"><div class="num" id="pub-s-sisa">0</div><div class="lbl">Sisa Pool</div></div>
-      <div class="pub-stat teal-s"><div class="num" id="pub-s-menang">0</div><div class="lbl">Sudah Menang</div></div>
-      <div class="pub-stat red-s"><div class="num" id="pub-s-hadir">0</div><div class="lbl">Hadir Konfirmasi</div></div>
+    <div class="info-rule">
+      <span class="icon">⚠️</span>
+      <div><strong>Aturan:</strong> Peserta yang <strong>hadir</strong> menjadi pemenang sah. Peserta yang <strong>tidak hadir</strong> akan dieliminasi dari undian selanjutnya, dan hadiah tersebut <strong>bisa diundi ulang</strong>. Reset melalui menu Pengaturan untuk mengembalikan semua ke awal.</div>
     </div>
-    <div class="pub-box accent">
-      <h3>🎁 Daftar Hadiah</h3>
-      <div id="pub-hadiah-list"><div class="pub-empty">Memuat...</div></div>
-    </div>
-    <div class="pub-box undian">
-      <h2>🎰 Panel Undian <span style="margin-left:auto;font-size:.68rem;color:var(--muted);font-weight:400">PIN diperlukan</span></h2>
-      <div id="pub-undian-list"><div class="pub-empty">Memuat...</div></div>
-    </div>
-    <div class="pub-box">
-      <h2>🏆 Daftar Pemenang <span id="pub-badge-total" class="badge badge-gold" style="margin-left:4px">0</span></h2>
-      <div class="pub-pemenang-list" id="pub-pemenang-list"><div class="pub-empty">Pengundian belum dimulai.</div></div>
-    </div>
-  </div>
-</div>
 
-<!-- LIVE VIEW -->
-<div id="liveview-overlay">
-  <div class="lv-topbar">
-    <span class="lv-label">👁 PREVIEW TAMPILAN PUBLIK</span>
-    <div style="display:flex;gap:6px">
-      <button class="btn-topbar btn-topbar-ghost" onclick="refreshLiveView()">↻ Refresh</button>
-      <button class="lv-close" onclick="tutupLiveView()">✕ Kembali</button>
-    </div>
-  </div>
-  <div id="lv-inner" style="flex:1;overflow-y:auto"></div>
-</div>
-
-<button id="admin-trigger" onclick="bukaLogin()" title="Login Admin">⚙</button>
-
-<!-- ADMIN VIEW -->
-<div id="admin-view">
-  <div class="admin-topbar">
-    <div class="admin-logo">☽ ADMIN <small id="topbar-org">Panitia Doorprize</small></div>
-    <button class="btn-topbar btn-topbar-ghost" onclick="showTab('undian',document.querySelector('[data-tab=undian]'))">🎰 Undian</button>
-    <button class="btn-topbar btn-topbar-ghost" onclick="bukaLiveView()">👁 Live</button>
-    <button class="btn-topbar btn-topbar-red" onclick="doLogout()">🚪 Logout</button>
-  </div>
-  <div class="admin-tabs-wrap">
-    <div class="admin-tabs">
-      <button class="tab-btn active" data-tab="peserta" onclick="showTab('peserta',this)">👥 Peserta</button>
-      <button class="tab-btn" data-tab="hadiah" onclick="showTab('hadiah',this)">🎁 Hadiah</button>
-      <button class="tab-btn" data-tab="undian" onclick="showTab('undian',this)">🎰 Undian</button>
-      <button class="tab-btn" data-tab="rekap" onclick="showTab('rekap',this)">📋 Rekap</button>
-      <button class="tab-btn" data-tab="settings" onclick="showTab('settings',this)">⚙️ Setting</button>
-    </div>
-  </div>
-  <div class="admin-content">
-
-    <!-- PESERTA -->
-    <div id="tab-peserta" class="tab-panel active">
-      <div class="stats-row">
-        <div class="stat-box gold-stat"><div class="num" id="s-total">0</div><div class="lbl">Total Peserta</div></div>
-        <div class="stat-box green-stat"><div class="num" id="s-aktif">0</div><div class="lbl">Sisa Pool</div></div>
-        <div class="stat-box teal-stat"><div class="num" id="s-menang">0</div><div class="lbl">Sudah Menang</div></div>
-        <div class="stat-box red-stat"><div class="num" id="s-hadir">0</div><div class="lbl">Hadir Konfirmasi</div></div>
+    <!-- Upload -->
+    <div class="card">
+      <h2><span class="icon">📤</span> Upload Data Peserta</h2>
+      <div class="drop-zone" id="drop-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <span class="dz-icon">📂</span>
+        <p>Klik atau <strong>drag & drop</strong> file CSV di sini</p>
+        <p style="font-size:.85rem;margin-top:8px;color:var(--muted)">
+          Format kolom: <strong style="color:var(--gold2)">No KK | Nama | Kelurahan | RT | RW</strong>
+        </p>
+        <p style="font-size:.8rem;margin-top:5px;color:var(--muted)">No KK harus 16 digit angka</p>
       </div>
-      <div class="card">
-        <h2>📤 Upload Data Peserta (CSV)</h2>
-        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
-          <span class="dz-icon">📂</span>
-          <p>Klik atau <strong>drag & drop</strong> file CSV</p>
-          <p style="font-size:.74rem;margin-top:5px;color:var(--muted)">Format: <strong style="color:var(--gold2)">No KK | Nama | Kelurahan | RT | RW</strong></p>
-        </div>
-        <input type="file" id="file-input" accept=".csv" style="display:none" onchange="handleFileUpload(event)">
-        <div id="upload-progress" style="display:none">
-          <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
-          <p style="font-size:.74rem;color:var(--muted);margin-top:3px" id="progress-text">Memproses...</p>
-        </div>
-        <div id="alert-upload" class="alert"></div>
+      <input type="file" id="file-input" accept=".csv" style="display:none" onchange="handleFileUpload(event)">
+      <div id="upload-progress" style="display:none">
+        <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+        <p style="font-size:.85rem;color:var(--muted);margin-top:5px" id="progress-text">Memproses...</p>
       </div>
-      <div class="card">
-        <h2>➕ Tambah Peserta Manual</h2>
+      <div id="alert-upload" class="alert"></div>
+    </div>
+
+    <!-- Tambah Manual -->
+    <div class="card">
+      <h2><span class="icon">➕</span> Tambah Peserta Manual</h2>
+      <div class="form-row">
+        <div style="flex:2"><label>Nomor KK (16 digit)</label><input type="text" id="inp-kk" placeholder="3201 2345 6789 0001" maxlength="20" oninput="formatKKInput(this)"></div>
+        <div style="flex:2"><label>Nama Kepala Keluarga</label><input type="text" id="inp-nama" placeholder="Ahmad Sulaiman"></div>
+        <div style="flex:1.5"><label>Kelurahan / Desa</label><input type="text" id="inp-kel" placeholder="Kel. Sukamaju"></div>
+        <div style="flex:.8"><label>RT</label><input type="text" id="inp-rt" placeholder="001"></div>
+        <div style="flex:.8"><label>RW</label><input type="text" id="inp-rw" placeholder="005"></div>
+      </div>
+      <button class="btn btn-gold" onclick="tambahManual()">➕ Tambah Peserta</button>
+      <div id="alert-manual" class="alert" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Daftar Peserta -->
+    <div class="card">
+      <h2><span class="icon">👥</span> Daftar Peserta
+        <div style="margin-left:auto;display:flex;gap:10px">
+          <button class="btn btn-ghost btn-sm" onclick="loadPeserta()">↻ Refresh</button>
+          <button class="btn btn-red btn-sm" onclick="hapusSemuaKonfirmasi()">🗑 Hapus Semua</button>
+        </div>
+      </h2>
+      <div class="form-row" style="margin-bottom:16px">
+        <input type="text" id="search-peserta" placeholder="🔍  Cari No KK, nama, atau kelurahan..." oninput="filterPeserta()">
+      </div>
+      <div class="tbl-wrap">
+        <table id="tbl-peserta">
+          <thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>RT/RW</th><th>Aksi</th></tr></thead>
+          <tbody id="tbody-peserta">
+            <tr class="empty-row"><td colspan="6">Belum ada data. Upload CSV atau tambah manual.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:10px">Menampilkan <span id="count-display">0</span> peserta</p>
+    </div>
+  </div>
+
+  <!-- ════════ TAB HADIAH ════════ -->
+  <div id="tab-hadiah" class="tab-panel">
+    <div class="card">
+      <h2><span class="icon">🎁</span> Kelola Hadiah</h2>
+      <p style="font-size:.9rem;color:var(--muted);margin-bottom:18px">Urutan undian: hadiah kecil lebih dulu, hadiah utama paling akhir. Klik <strong style="color:var(--gold2)">Simpan Semua</strong> setelah selesai.</p>
+      <div id="hadiah-list"></div>
+      <div style="background:rgba(11,36,25,.6);border:1px dashed rgba(255,215,0,.22);border-radius:14px;padding:18px;margin-top:12px">
+        <p style="font-size:.9rem;color:var(--gold2);font-weight:800;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">➕ Tambah Hadiah Baru</p>
         <div class="form-row">
-          <div style="flex:2;min-width:160px"><label>No KK (16 digit)</label><input type="text" id="inp-kk" placeholder="3201 2345 6789 0001" maxlength="20" oninput="formatKKInput(this)"></div>
-          <div style="flex:2;min-width:140px"><label>Nama Kepala Keluarga</label><input type="text" id="inp-nama" placeholder="Ahmad Sulaiman"></div>
-          <div style="flex:1.5;min-width:120px"><label>Kelurahan</label><input type="text" id="inp-kel" placeholder="Kel. Sukamaju"></div>
-          <div style="flex:.7;min-width:70px"><label>RT</label><input type="text" id="inp-rt" placeholder="001"></div>
-          <div style="flex:.7;min-width:70px"><label>RW</label><input type="text" id="inp-rw" placeholder="005"></div>
+          <div style="flex:2"><label>Nama Hadiah</label><input type="text" id="inp-h-nama" placeholder="Kulkas 2 Pintu"></div>
+          <div style="flex:2"><label>Deskripsi (opsional)</label><input type="text" id="inp-h-desc" placeholder="Sharp 150 Liter"></div>
+          <div style="flex:1.5"><label>Sponsor / Donatur</label><input type="text" id="inp-h-sponsor" placeholder="Bapak Ahmad"></div>
+          <div style="flex:.8"><label>Jml Pemenang</label><input type="number" id="inp-h-jml" value="1" min="1" max="100"></div>
         </div>
-        <button class="btn btn-gold" onclick="tambahManual()">➕ Tambah</button>
-        <div id="alert-manual" class="alert" style="margin-top:8px"></div>
+        <div class="toggle-utama-wrap">
+          <input type="checkbox" id="inp-h-utama">
+          <label for="inp-h-utama">🌟 Jadikan Hadiah Utama (Grand Prize) — tampil terpisah &amp; terkunci sampai semua hadiah biasa selesai diundi</label>
+        </div>
+        <button class="btn btn-gold" onclick="tambahHadiah()">+ Tambah ke Daftar</button>
       </div>
-      <div class="card">
-        <h2>👥 Daftar Peserta
-          <div style="margin-left:auto;display:flex;gap:6px">
-            <button class="btn btn-ghost btn-sm" onclick="loadPeserta()">↻</button>
-            <button class="btn btn-red btn-sm" onclick="hapusSemuaKonfirmasi()">🗑 Hapus Semua</button>
-          </div>
-        </h2>
-        <div class="form-row" style="margin-bottom:12px">
-          <input type="text" id="search-peserta" placeholder="🔍 Cari No KK, nama, kelurahan..." oninput="filterPeserta()">
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Kelurahan</th><th>RT/RW</th><th>Aksi</th></tr></thead>
-            <tbody id="tbody-peserta"><tr class="empty-row"><td colspan="6">Belum ada data.</td></tr></tbody>
-          </table>
-        </div>
-        <p style="font-size:.72rem;color:var(--muted);margin-top:6px">Menampilkan <span id="count-display">0</span> peserta</p>
+      <div id="alert-hadiah" class="alert"></div>
+      <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-green btn-lg" onclick="simpanSemuaHadiah()">💾 Simpan Semua Hadiah ke Sheet</button>
+        <button class="btn btn-ghost" onclick="loadHadiah()">↻ Reload dari Sheet</button>
       </div>
     </div>
-
-    <!-- HADIAH -->
-    <div id="tab-hadiah" class="tab-panel">
-      <div class="card">
-        <h2>🎁 Kelola Hadiah</h2>
-        <div id="hadiah-list"></div>
-        <div style="background:rgba(6,13,10,.5);border:1px dashed rgba(212,175,55,.18);border-radius:10px;padding:14px;margin-top:8px">
-          <p style="font-size:.8rem;color:var(--gold2);font-weight:800;margin-bottom:10px">➕ Tambah Hadiah Baru</p>
-          <div class="form-row">
-            <div style="flex:2;min-width:140px"><label>Nama Hadiah</label><input type="text" id="inp-h-nama" placeholder="Kulkas 2 Pintu"></div>
-            <div style="flex:2;min-width:120px"><label>Deskripsi</label><input type="text" id="inp-h-desc" placeholder="Sharp 150 Liter"></div>
-            <div style="flex:1.5;min-width:110px"><label>Sponsor</label><input type="text" id="inp-h-sponsor" placeholder="Bapak Ahmad"></div>
-            <div style="flex:.8;min-width:80px"><label>Jml Pemenang</label><input type="number" id="inp-h-jml" value="1" min="1" max="100"></div>
-          </div>
-          <button class="btn btn-gold" onclick="tambahHadiah()">+ Tambah ke Daftar</button>
-        </div>
-        <div id="alert-hadiah" class="alert"></div>
-        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-green btn-lg" onclick="simpanSemuaHadiah()">💾 Simpan Semua</button>
-          <button class="btn btn-ghost" onclick="loadHadiah()">↻ Reload</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- UNDIAN -->
-    <div id="tab-undian" class="tab-panel">
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat-box gold-stat"><div class="num" id="u-pool">0</div><div class="lbl">Sisa Pool</div></div>
-        <div class="stat-box green-stat"><div class="num" id="u-selesai">0</div><div class="lbl">Hadiah Selesai</div></div>
-        <div class="stat-box teal-stat"><div class="num" id="u-hadir">0</div><div class="lbl">Hadir Konfirmasi</div></div>
-      </div>
-      <div class="card">
-        <h2>🎰 Panel Pengundian</h2>
-        <div id="undian-list"><p style="color:var(--muted);text-align:center;padding:28px">Belum ada hadiah.</p></div>
-      </div>
-      <div class="card">
-        <h2>🏆 Pemenang Sesi Ini <button class="btn btn-ghost btn-sm" onclick="loadRekap()" style="margin-left:auto">↻</button></h2>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Hadiah</th><th>No KK</th><th>Nama</th><th>Kelurahan</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody id="tbody-pemenang-today"><tr class="empty-row"><td colspan="7">Belum ada pemenang.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- REKAP -->
-    <div id="tab-rekap" class="tab-panel">
-      <div class="card">
-        <h2>📋 Rekap Seluruh Pemenang</h2>
-        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-          <button class="btn btn-gold" onclick="loadRekap()">↻ Refresh</button>
-          <button class="btn btn-green" onclick="exportCSV()">⬇ Export CSV</button>
-          <button class="btn btn-teal" onclick="window.print()">🖨 Print</button>
-        </div>
-        <div id="rekap-per-hadiah"></div>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div id="tab-settings" class="tab-panel">
-      <div class="card">
-        <h2>⚙️ Pengaturan Acara</h2>
-        <div class="settings-section">
-          <h3>🌙 Identitas Acara</h3>
-          <div class="form-row">
-            <div><label>Nama Acara</label><input type="text" id="set-nama-acara"></div>
-            <div style="max-width:160px"><label>Tahun Hijriah</label><input type="text" id="set-tahun"></div>
-          </div>
-          <div class="form-row">
-            <div><label>Nama Panitia</label><input type="text" id="set-panitia"></div>
-            <div><label>Nama Organisasi</label><input type="text" id="set-org"></div>
-          </div>
-          <div class="form-row">
-            <div><label>Lokasi</label><input type="text" id="set-lokasi"></div>
-            <div><label>Tema</label><input type="text" id="set-tema"></div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3>📜 Ticker</h3>
-          <textarea id="set-ticker" rows="2" style="resize:vertical"></textarea>
-          <p style="font-size:.72rem;color:var(--muted);margin-top:3px">Pisahkan dengan | (pipe)</p>
-        </div>
-        <div class="settings-section">
-          <h3>🖥 Tampilan Publik</h3>
-          <div class="form-row">
-            <div><label>Tampilkan No KK?</label>
-              <select id="set-show-kk">
-                <option value="ya">Ya — tampilkan lengkap</option>
-                <option value="tidak">Tidak — sensor sebagian</option>
-              </select>
-            </div>
-            <div><label>Ucapan untuk Pemenang</label><input type="text" id="set-ucapan"></div>
-          </div>
-        </div>
-
-        <!-- ✅ SETTING SUARA -->
-        <div class="settings-section">
-          <h3>🔊 Tema Suara Pengundian</h3>
-          <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Pilih karakter suara yang akan diputar saat pengundian berlangsung.</p>
-          <div class="sound-themes" id="sound-themes">
-            <button class="sound-theme-btn" data-theme="default" onclick="pilihTemaSuara('default',this)">
-              <span class="st-icon">🎵</span>
-              <span class="st-name">Default</span>
-              <span class="st-desc">Nada bersih & simpel</span>
-            </button>
-            <button class="sound-theme-btn" data-theme="gameshow" onclick="pilihTemaSuara('gameshow',this)">
-              <span class="st-icon">🎮</span>
-              <span class="st-name">Gameshow</span>
-              <span class="st-desc">Seru & dramatis</span>
-            </button>
-            <button class="sound-theme-btn" data-theme="majestic" onclick="pilihTemaSuara('majestic',this)">
-              <span class="st-icon">👑</span>
-              <span class="st-name">Majestic</span>
-              <span class="st-desc">Megah & khidmat</span>
-            </button>
-            <button class="sound-theme-btn" data-theme="silent" onclick="pilihTemaSuara('silent',this)">
-              <span class="st-icon">🔇</span>
-              <span class="st-name">Silent</span>
-              <span class="st-desc">Tanpa suara</span>
-            </button>
-          </div>
-          <button class="btn-preview-sound" onclick="previewSuara()">▶ Preview Suara</button>
-          <div id="alert-suara" class="alert" style="margin-top:8px"></div>
-        </div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-green btn-lg" onclick="simpanSettings()">💾 Simpan</button>
-          <button class="btn btn-ghost" onclick="loadSettings()">↻ Reset</button>
-        </div>
-        <div id="alert-settings" class="alert" style="margin-top:10px"></div>
-      </div>
-
-      <div class="card">
-        <h2>🔐 Ganti Password Admin</h2>
-        <div class="change-pw-box">
-          <h4>Update Password</h4>
-          <div class="form-row">
-            <div><label>Password Lama</label><input type="password" id="pw-old" placeholder="••••••••"></div>
-            <div><label>Password Baru</label><input type="password" id="pw-new" placeholder="••••••••"></div>
-            <div><label>Konfirmasi Baru</label><input type="password" id="pw-confirm" placeholder="••••••••"></div>
-          </div>
-          <button class="btn btn-teal" onclick="gantiPasswordAdmin()">🔐 Ganti Password</button>
-          <div id="alert-pw" class="alert" style="margin-top:8px"></div>
-        </div>
-        <p style="font-size:.74rem;color:var(--muted);margin-top:8px">⚠️ Password default: <code style="color:var(--gold2)">admin123</code></p>
-      </div>
-
-      <div class="card">
-        <h2>🔢 PIN Undian Publik</h2>
-        <div class="pin-settings-wrap">
-          <h4>Atur PIN (4 digit angka)</h4>
-          <div class="form-row">
-            <div><label>PIN Saat Ini</label><input type="password" id="pin-current" maxlength="4"></div>
-            <div><label>PIN Baru</label><input type="password" id="pin-new" maxlength="4"></div>
-            <div><label>Konfirmasi PIN</label><input type="password" id="pin-confirm" maxlength="4"></div>
-          </div>
-          <button class="btn btn-gold" onclick="gantiPIN()">🔢 Simpan PIN</button>
-          <div id="alert-pin-settings" class="alert" style="margin-top:8px"></div>
-        </div>
-        <p style="font-size:.74rem;color:var(--muted);margin-top:8px">PIN default: <code style="color:var(--gold2)">1234</code></p>
-      </div>
-
-      <div class="card" style="border-color:rgba(185,28,28,.22)">
-        <h2 style="color:var(--red2)">⚠️ Danger Zone</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-dark" onclick="resetPemenangKonfirmasi()">🔄 Reset Pemenang Saja</button>
-          <button class="btn btn-red" onclick="resetSemuaKonfirmasi()">💥 Reset SEMUA Data</button>
-        </div>
-        <p style="font-size:.76rem;color:var(--muted);margin-top:8px">⚠ Tidak bisa dibatalkan. Export rekap dahulu!</p>
-      </div>
-    </div>
-
   </div>
+
+  <!-- ════════ TAB UNDIAN (MAIN VIEW) ════════ -->
+  <div id="tab-undian" class="tab-panel active">
+
+    <h2 style="text-align:center;font-family:'Cinzel Decorative',serif;font-size:clamp(1.3rem,3.5vw,2.4rem);color:var(--gold);margin:0 0 16px;text-shadow:0 0 40px rgba(255,215,0,.5);letter-spacing:.05em">Hadiah Doorprize</h2>
+
+    <div class="dual-prize-grid">
+      <!-- ═══ KOLOM KIRI: HADIAH UTAMA (GRAND PRIZE) ═══ -->
+      <div class="grand-frame" id="grand-frame">
+        <div class="grand-frame-title">
+          <span class="gf-icon">⭐</span> Hadiah Utama
+          <span class="gf-count" id="gf-count">0 hadiah</span>
+        </div>
+        <div id="grand-lock-note" class="grand-lock-note" style="display:none">
+          <span>🔒</span>
+          <span>Hadiah Utama terkunci — selesaikan semua hadiah biasa terlebih dahulu sebelum mengundi Hadiah Utama.</span>
+        </div>
+        <div id="grand-list">
+          <p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>
+        </div>
+      </div>
+
+      <!-- ═══ KOLOM KANAN: HADIAH UNDI (BIASA) ═══ -->
+      <div class="prize-frame">
+        <div class="prize-frame-title">
+          <span class="pf-icon">🎁</span> Daftar Hadiah Undi
+          <span class="pf-spacer"></span>
+          <span class="pf-count" id="pf-count">0 hadiah</span>
+          <button class="btn-siap-undi-inline" id="btn-siap-undi" onclick="siapUndi()" title="Acak hadiah mana yang akan diundi untuk peserta">🎯 Siap Undi</button>
+        </div>
+        <div class="prize-track-viewport" id="prize-track-viewport">
+          <div id="undian-list">
+            <p style="color:var(--muted);text-align:center;padding:36px;font-size:1.05rem">Belum ada hadiah. Buka menu Hadiah untuk menambahkan.</p>
+          </div>
+        </div>
+        <!-- Siap Undi (lama) — disembunyikan, diganti inline di header -->
+        <div class="siap-undi-wrap" style="display:none">
+          <button class="btn-acak-hadiah" title="hidden">🎯 Siap Undi</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🏆</span> Pemenang Sesi Ini
+        <button class="btn btn-ghost btn-sm" onclick="loadRekap()" style="margin-left:auto">↻ Refresh</button>
+      </h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Hadiah</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="tbody-pemenang-today"><tr class="empty-row"><td colspan="7">Belum ada pemenang.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="undian-stats-bar">
+      <div class="undian-stat-chip chip-gold"><span class="chip-num" id="u-pool">0</span> Sisa Undian</div>
+      <div class="undian-stat-chip chip-green"><span class="chip-num" id="u-selesai">0</span> Hadiah Selesai</div>
+      <div class="undian-stat-chip chip-teal"><span class="chip-num" id="u-hadir">0</span> Hadir</div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB REKAP ════════ -->
+  <div id="tab-rekap" class="tab-panel">
+    <div class="card">
+      <h2><span class="icon">📋</span> Rekap Seluruh Pemenang</h2>
+      <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="loadRekap()">↻ Refresh</button>
+        <button class="btn btn-green" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-teal" onclick="printRekap()">🖨 Print</button>
+      </div>
+      <div id="rekap-per-hadiah"></div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB SETTINGS ════════ -->
+  <div id="tab-settings" class="tab-panel">
+    <div class="card">
+      <h2><span class="icon">⚙️</span> Pengaturan Acara</h2>
+      <div class="settings-section">
+        <h3>🌙 Identitas Acara</h3>
+        <div class="form-row">
+          <div style="flex:2"><label>Nama Acara</label><input type="text" id="set-nama-acara" placeholder="Perayaan Tahun Baru Islam 1447 H"></div>
+          <div style="flex:1"><label>Tahun Hijriah</label><input type="text" id="set-tahun" placeholder="1447 H"></div>
+        </div>
+        <div class="form-row">
+          <div style="flex:2"><label>Nama Panitia</label><input type="text" id="set-panitia" placeholder="Panitia Muharram DKM Al-Ikhlas"></div>
+          <div style="flex:2"><label>Nama Organisasi</label><input type="text" id="set-org" placeholder="DKM Al-Ikhlas Kel. Sukamaju"></div>
+        </div>
+        <div class="form-row">
+          <div style="flex:2"><label>Lokasi Acara</label><input type="text" id="set-lokasi" placeholder="Aula Kelurahan Sukamaju"></div>
+          <div style="flex:2"><label>Tema Acara</label><input type="text" id="set-tema" placeholder="Hijrah Menuju Kebaikan"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-green btn-lg" onclick="simpanSettings()">💾 Simpan Pengaturan</button>
+        <button class="btn btn-ghost" onclick="loadSettings()">↻ Reset</button>
+      </div>
+      <div id="alert-settings" class="alert" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card" style="border-color:rgba(204,17,17,.3)">
+      <h2 style="color:var(--red2)"><span class="icon">⚠️</span> Danger Zone</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-dark" onclick="resetPemenangKonfirmasi()">🔄 Reset Pemenang Saja</button>
+        <button class="btn btn-red" onclick="resetSemuaKonfirmasi()">💥 Reset SEMUA Data</button>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:12px">⚠ Reset tidak bisa dibatalkan. Pastikan sudah export rekap terlebih dahulu.</p>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ════════ SIDE MENUS ════════ -->
+<div class="side-trigger left"></div>
+<div class="side-arrow left-arrow"><span class="arrow-icon">▶</span></div>
+<div class="side-menu left">
+  <button class="side-menu-btn" onclick="openPanel('peserta')"><span class="sm-icon">👥</span> Peserta</button>
+  <button class="side-menu-btn" onclick="openPanel('hadiah')"><span class="sm-icon">🎁</span> Hadiah</button>
+</div>
+<div class="side-trigger right"></div>
+<div class="side-arrow right-arrow"><span class="arrow-icon">◀</span></div>
+<div class="side-menu right">
+  <button class="side-menu-btn" onclick="openPanel('rekap')"><span class="sm-icon">📋</span> Rekap</button>
+  <button class="side-menu-btn" onclick="openPanel('settings')"><span class="sm-icon">⚙️</span> Pengaturan</button>
 </div>
 
+<!-- Panel overlays -->
+<div class="panel-overlay-backdrop" id="panel-backdrop" onclick="closePanel()"></div>
+<div class="panel-overlay panel-left" id="panel-peserta">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-title">👥 Data Peserta</div>
+  <div id="panel-peserta-content"></div>
+</div>
+<div class="panel-overlay panel-left" id="panel-hadiah">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-title">🎁 Kelola Hadiah</div>
+  <div id="panel-hadiah-content"></div>
+</div>
+<div class="panel-overlay panel-right" id="panel-rekap">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-title">📋 Rekap Pemenang</div>
+  <div id="panel-rekap-content"></div>
+</div>
+<div class="panel-overlay panel-right" id="panel-settings">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-title">⚙️ Pengaturan</div>
+  <div id="panel-settings-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
 <script>
-// ══════════════════════════════════════════════════════
-//  KONFIGURASI — GANTI URL INI
-// ══════════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyqxGPjMbeap_Ua5WVf-z5HZ2m8G1iwia-Au1u7KEa3LfcFX_oUfO0lOwF0zZuJO6kx/exec';
+// ─── STATE ───────────────────────────────────────────────────
+let allPeserta    = [];
+let allHadiah     = [];
+let allRekap      = [];
+let appSettings   = {};
 
-// ══════════ STATE ══════════
-let allPeserta=[],allHadiah=[],allRekap=[],appSettings={};
-let slotRunning=false,slotMode='',audioCtx=null,isLoggedIn=false;
-let publicRefreshTimer=null;
-let pinBuffer='',pinTargetHadiah='',pinTargetJumlah=1,currentPIN='1234';
-let lastPemenang=[],lastNamaHadiah='';
-let temaSuara='default'; // ✅ tema suara aktif
+// State slot machine
+let slotRunning   = false;
+let stopRequested = false;   // ← flag tombol STOP ditekan
+let poolTerAcak   = [];      // Pool yang sudah diacak server (untuk stop manual)
+let currentHadiahCtx = null; // { namaHadiah, jumlah }
+let audioCtx      = null;
 
-// ══════════ GAS API ══════════
-async function gasCall(fn,param=null){
-  try{
-    if(['getPublicSettings','getSettings','getPeserta','getHadiah','getRekap','getPemenangPublik','getStatistik','initSheets'].includes(fn)){
-      const p=param!==null?encodeURIComponent(JSON.stringify(param)):'';
-      const res=await fetch(`${GAS_URL}?fn=${fn}${p?'&p='+p:''}`);
-      return await res.json();
+// ─── STARFIELD CANVAS ────────────────────────────────────────
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let stars    = [];
+  let W, H;
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  function initStars(){
+    stars = Array.from({length: 140}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.8 + .4,
+      a: Math.random(), da: (Math.random()*.01+.003)*(Math.random()<.5?1:-1),
+      speed: Math.random()*.18+.06
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s => {
+      s.a += s.da;
+      if(s.a>1||s.a<0) s.da *= -1;
+      s.y -= s.speed;
+      if(s.y < -5){ s.y = H+5; s.x = Math.random()*W; }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,215,0,${s.a*0.65})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', ()=>{ resize(); initStars(); });
+  resize(); initStars(); draw();
+})();
+
+// ─── AUDIO ENGINE ────────────────────────────────────────────
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, dur, type='sine', vol=0.3){
+  try {
+    const ac  = getAudioCtx();
+    const osc = ac.createOscillator();
+    const gn  = ac.createGain();
+    osc.connect(gn); gn.connect(ac.destination);
+    osc.type = type; osc.frequency.setValueAtTime(freq, ac.currentTime);
+    gn.gain.setValueAtTime(vol, ac.currentTime);
+    gn.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    osc.start(); osc.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+function playDrum()    { playTone(80,.3,'sawtooth',.4); }
+function playTick()    { playTone(1200,.04,'square',.12); }
+function playSlowTick(f){ playTone(f,.12,'square',.25); }
+function playFanfare() {
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.3,'sine',.4),i*120));
+  setTimeout(()=>playTone(1047,.6,'sine',.5),480);
+}
+function playStopSound(){
+  // Suara dramatis saat tombol stop ditekan
+  [300,400,500,650,800].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sawtooth',.3),i*60));
+}
+
+// ─── UTILS ───────────────────────────────────────────────────
+function showLoading(v, msg='MEMPROSES...'){
+  document.getElementById('loading-overlay').classList.toggle('show', v);
+  document.getElementById('loading-text').textContent = msg;
+}
+function showAlert(id, msg, type='info'){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.className = `alert alert-${type} show`;
+  el.innerHTML = msg;
+  setTimeout(()=>el.classList.remove('show'), 7000);
+}
+function toast(msg, type='info'){
+  const icons = {success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{ el.classList.add('removing'); setTimeout(()=>el.remove(),300); }, 4000);
+}
+// ─── GAS ENDPOINT ────────────────────────────────────────────
+// Ganti nilai GAS_URL dengan URL deploy GAS Web App Anda
+// Cara deploy: Apps Script → Deploy → New deployment →
+//   Type: Web app, Execute as: Me, Who has access: Anyone
+// Salin URL yang muncul, tempel di bawah ini.
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzGu7uTE7Zh_uuEMnADqym2XtaN-ttNmDVdEyHVKWcZlQutUb3p09b7T9ujqQtDIoh3/exec';
+
+// gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
+// GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
+async function gasCall(fn, ...args){
+  if(!GAS_URL || GAS_URL.startsWith('GANTI')){
+    console.error('GAS_URL belum diisi di index.html!');
+    throw new Error('GAS_URL belum dikonfigurasi.');
+  }
+  const params = new URLSearchParams({
+    fn,
+    args: JSON.stringify(args)
+  });
+  const url = `${GAS_URL}?${params.toString()}`;
+  const resp = await fetch(url, { redirect: 'follow' });
+  if(!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  return resp.json();
+}
+function escStr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function formatNoKK(kk){ return String(kk).replace(/\D/g,'').replace(/(\d{4})(?=\d)/g,'$1 '); }
+function formatKKInput(el){
+  let v = el.value.replace(/\D/g,'').slice(0,16);
+  el.value = v.replace(/(\d{4})(?=\d)/g,'$1 ');
+}
+
+// ─── PANEL NAVIGATION ────────────────────────────────────────
+let currentPanel = null;
+
+function openPanel(name){
+  closePanel();
+  const panelEl = document.getElementById('panel-'+name);
+  const contentEl = document.getElementById('panel-'+name+'-content');
+  if(!panelEl || !contentEl) return;
+
+  // Move tab content into panel
+  const tabContent = document.getElementById('tab-'+name);
+  if(tabContent) {
+    contentEl.innerHTML = '';
+    Array.from(tabContent.children).forEach(ch => contentEl.appendChild(ch));
+  }
+
+  // Trigger data load
+  if(name==='peserta')  loadPeserta();
+  if(name==='hadiah')   loadHadiah();
+  if(name==='rekap')    loadRekap();
+  if(name==='settings') loadSettings();
+
+  panelEl.classList.add('open');
+  document.getElementById('panel-backdrop').classList.add('show');
+  currentPanel = name;
+}
+
+function closePanel(){
+  if(currentPanel){
+    const panelEl = document.getElementById('panel-'+currentPanel);
+    const contentEl = document.getElementById('panel-'+currentPanel+'-content');
+    const tabContent = document.getElementById('tab-'+currentPanel);
+
+    // Move children back to tab container
+    if(tabContent && contentEl){
+      Array.from(contentEl.children).forEach(ch => tabContent.appendChild(ch));
     }
-    const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({fn,param})});
-    return await res.json();
-  }catch(e){console.error('gasCall error:',fn,e);return{success:false,message:e.message};}
-}
 
-// ══════════ STARFIELD ══════════
-(function(){const canvas=document.getElementById('bg-canvas');if(!canvas)return;const ctx=canvas.getContext('2d');let stars=[],W,H;function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}function init(){stars=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.3+.3,a:Math.random(),da:(Math.random()*.007+.002)*(Math.random()<.5?1:-1),speed:Math.random()*.12+.04}));}function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.da;if(s.a>1||s.a<0)s.da*=-1;s.y-=s.speed;if(s.y<-5){s.y=H+5;s.x=Math.random()*W;}ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(212,175,55,${s.a*.5})`;ctx.fill();});requestAnimationFrame(draw);}window.addEventListener('resize',()=>{resize();init();});resize();init();draw();})();
-
-// ══════════ AUDIO ENGINE — MULTI TEMA ══════════
-function getAudioCtx(){if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return audioCtx;}
-
-function playTone(freq,dur,type='sine',vol=0.3,delay=0){
-  if(temaSuara==='silent')return;
-  try{
-    const ac=getAudioCtx();if(!ac)return;
-    const o=ac.createOscillator(),g=ac.createGain();
-    o.connect(g);g.connect(ac.destination);
-    o.type=type;
-    const t=ac.currentTime+delay;
-    o.frequency.setValueAtTime(freq,t);
-    g.gain.setValueAtTime(vol,t);
-    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-    o.start(t);o.stop(t+dur);
-  }catch(e){}
-}
-
-// Definisi tema suara
-const SOUND_THEMES = {
-  default: {
-    tick:     ()=>{ playTone(1100,.05,'square',.1); },
-    slowTick: (f)=>{ playTone(f,.1,'square',.18); },
-    fanfare:  ()=>{ [523,659,784,1047].forEach((f,i)=>{ playTone(f,.28,'sine',.35,i*.11); }); playTone(1047,.55,'sine',.45,.44); },
-    pinBeep:  ()=>{ playTone(880,.06,'sine',.18); },
-    pinOk:    ()=>{ [600,800,1000].forEach((f,i)=>{ playTone(f,.09,'sine',.22,i*.065); }); },
-    pinErr:   ()=>{ playTone(220,.28,'sawtooth',.22); },
-  },
-  gameshow: {
-    tick:     ()=>{ playTone(1400,.04,'sawtooth',.08); },
-    slowTick: (f)=>{ playTone(f,.08,'sawtooth',.2); playTone(f*1.5,.04,'square',.1,.09); },
-    fanfare:  ()=>{
-      // Dramatis naik turun
-      [400,600,800,1200,1600].forEach((f,i)=>{ playTone(f,.15,'sawtooth',.3,i*.1); });
-      [1600,1400,1200,1600,2000].forEach((f,i)=>{ playTone(f,.2,'sine',.4,.55+i*.12); });
-      playTone(2000,.8,'sine',.5,1.2);
-    },
-    pinBeep:  ()=>{ playTone(1200,.05,'square',.2); },
-    pinOk:    ()=>{ [800,1000,1200,1600].forEach((f,i)=>{ playTone(f,.08,'square',.25,i*.06); }); },
-    pinErr:   ()=>{ [300,200,150].forEach((f,i)=>{ playTone(f,.15,'sawtooth',.3,i*.12); }); },
-  },
-  majestic: {
-    tick:     ()=>{ playTone(440,.08,'sine',.08); },
-    slowTick: (f)=>{ playTone(f,.2,'sine',.15); playTone(f*.75,.2,'sine',.08,.05); },
-    fanfare:  ()=>{
-      // Arpeggio megah
-      const chord=[261,329,392,523];
-      chord.forEach((f,i)=>{ playTone(f,.6,'sine',.3,i*.08); });
-      setTimeout(()=>{
-        const chord2=[392,494,587,784];
-        chord2.forEach((f,i)=>{ playTone(f,.8,'sine',.4,i*.1); });
-      },600);
-      setTimeout(()=>{
-        [523,659,784,1047,1319].forEach((f,i)=>{ playTone(f,1,'sine',.35,i*.12); });
-      },1400);
-    },
-    pinBeep:  ()=>{ playTone(660,.1,'sine',.15); },
-    pinOk:    ()=>{ [523,659,784].forEach((f,i)=>{ playTone(f,.2,'sine',.2,i*.1); }); },
-    pinErr:   ()=>{ playTone(196,.4,'sine',.2); playTone(185,.4,'sine',.15,.1); },
-  },
-  silent: {
-    tick:()=>{},slowTick:()=>{},fanfare:()=>{},pinBeep:()=>{},pinOk:()=>{},pinErr:()=>{},
+    panelEl.classList.remove('open');
   }
-};
-
-function playTick()    { SOUND_THEMES[temaSuara]?.tick(); }
-function playSlowTick(f){ SOUND_THEMES[temaSuara]?.slowTick(f); }
-function playFanfare() { SOUND_THEMES[temaSuara]?.fanfare(); }
-function playPinBeep() { SOUND_THEMES[temaSuara]?.pinBeep(); }
-function playPinOk()   { SOUND_THEMES[temaSuara]?.pinOk(); }
-function playPinError(){ SOUND_THEMES[temaSuara]?.pinErr(); }
-
-// Pilih tema suara (di settings)
-function pilihTemaSuara(tema, el) {
-  temaSuara = tema;
-  document.querySelectorAll('.sound-theme-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
+  document.getElementById('panel-backdrop').classList.remove('show');
+  currentPanel = null;
+  // Refresh undian data
+  loadHadiah(); loadRekap(); refreshStats();
 }
 
-// Preview suara saat ini
-function previewSuara() {
-  if(temaSuara==='silent'){ showAlert('alert-suara','🔇 Mode Silent — tidak ada suara yang diputar.','info'); return; }
-  playFanfare();
-  showAlert('alert-suara',`▶ Memainkan preview tema <strong>${temaSuara}</strong>...`,'info');
-}
-
-// ══════════ UTILS ══════════
-function showLoading(v,msg='MEMPROSES...'){document.getElementById('loading-overlay').classList.toggle('show',v);document.getElementById('loading-text').textContent=msg;}
-function showAlert(id,msg,type='info'){const el=document.getElementById(id);if(!el)return;el.className=`alert alert-${type} show`;el.innerHTML=msg;setTimeout(()=>el.classList.remove('show'),6000);}
-function toast(msg,type='info'){const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};const el=document.createElement('div');el.className='toast';el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span style="flex:1">${msg}</span>`;document.getElementById('toast-container').appendChild(el);setTimeout(()=>{el.classList.add('removing');setTimeout(()=>el.remove(),300);},3500);}
-function escStr(s){return(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
-function formatNoKK(kk){return String(kk).replace(/\D/g,'').replace(/(\d{4})/g,'$1 ').trim();}
-function formatKKInput(el){let v=el.value.replace(/\D/g,'').slice(0,16);el.value=v.replace(/(\d{4})(?=\d)/g,'$1 ');}
-function maskKK(kk){const d=String(kk).replace(/\D/g,'');return d.slice(0,4)+' •••• •••• '+d.slice(-4);}
-
-// ══════════ PIN ══════════
-function bukaPin(namaHadiah,jumlah){if(slotRunning)return;pinBuffer='';pinTargetHadiah=namaHadiah;pinTargetJumlah=jumlah;updatePinDots();document.getElementById('pin-error').classList.remove('show');document.getElementById('pin-hadiah-name').textContent='🎁 '+namaHadiah;document.getElementById('pin-modal').classList.add('show');}
-function tutupPinModal(){pinBuffer='';updatePinDots();document.getElementById('pin-modal').classList.remove('show');}
-function pinInput(digit){if(pinBuffer.length>=4)return;pinBuffer+=digit;playPinBeep();updatePinDots();if(pinBuffer.length===4)setTimeout(verifikasiPin,150);}
-function pinBackspace(){if(!pinBuffer.length)return;pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
-function pinClear(){pinBuffer='';updatePinDots();}
-function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);}
-function verifikasiPin(){if(pinBuffer===currentPIN){playPinOk();tutupPinModal();mulaiUndianPublik(pinTargetHadiah,pinTargetJumlah);}else{playPinError();pinBuffer='';updatePinDots();const e=document.getElementById('pin-error');e.classList.add('show');setTimeout(()=>e.classList.remove('show'),3000);}}
-document.addEventListener('keydown',function(e){const open=document.getElementById('pin-modal').classList.contains('show');if(!open)return;if(e.key>='0'&&e.key<='9')pinInput(e.key);else if(e.key==='Backspace')pinBackspace();else if(e.key==='Escape')tutupPinModal();});
-function gantiPIN(){const curr=document.getElementById('pin-current').value.trim(),nw=document.getElementById('pin-new').value.trim(),conf=document.getElementById('pin-confirm').value.trim();if(!curr||!nw||!conf)return showAlert('alert-pin-settings','❌ Semua kolom PIN wajib diisi.','error');if(curr!==currentPIN)return showAlert('alert-pin-settings','❌ PIN saat ini salah.','error');if(!/^\d{4}$/.test(nw))return showAlert('alert-pin-settings','❌ PIN harus 4 digit angka.','error');if(nw!==conf)return showAlert('alert-pin-settings','❌ Konfirmasi PIN tidak cocok.','error');gasCall('saveSettings',{pin_undian:nw}).then(()=>{currentPIN=nw;['pin-current','pin-new','pin-confirm'].forEach(id=>document.getElementById(id).value='');showAlert('alert-pin-settings',`✅ PIN berhasil diubah menjadi <strong>${nw}</strong>.`,'success');toast('PIN diperbarui 🔢','success');});}
-
-// ══════════ KONFIRMASI PUBLIK — dengan undi ulang ══════════
-function bukaKonfirmasiPublik(pemenang, namaHadiah) {
-  lastPemenang=pemenang; lastNamaHadiah=namaHadiah;
-  document.getElementById('kp-title').textContent=`🏆 Pemenang ${namaHadiah}`;
-  document.getElementById('kp-sub').textContent=pemenang.length===1
-    ?'Centang jika pemenang HADIR. Kosongkan jika tidak hadir (akan diundi ulang).'
-    :`Centang pemenang yang HADIR (${pemenang.length} orang). Yang tidak dicentang akan diundi ulang.`;
-  const showKK=(appSettings.show_kk_publik||'ya')!=='tidak';
-  document.getElementById('kp-list').innerHTML=pemenang.map((p,i)=>`
-    <div class="konfirm-item">
-      <input type="checkbox" class="konfirm-cb" id="cb-${i}" checked>
-      <div class="konfirm-num">${i+1}</div>
-      <div class="konfirm-info">
-        <div class="konfirm-kk">${showKK?formatNoKK(p.noKK):maskKK(p.noKK)}</div>
-        <div class="konfirm-nama">${p.nama||'—'}</div>
-        <div class="konfirm-kel">${p.kelurahan||''}</div>
-      </div>
-    </div>`).join('');
-  document.getElementById('konfirmasi-publik-modal').classList.add('show');
-}
-
-async function submitKonfirmasiPublik() {
-  // Kumpulkan siapa yang hadir dan tidak hadir
-  const hadir    = [];
-  const tidakHadir = [];
-  lastPemenang.forEach((p,i)=>{
-    const cb=document.getElementById('cb-'+i);
-    if(cb&&cb.checked) hadir.push(p.noKK);
-    else tidakHadir.push(p.noKK);
-  });
-
-  document.getElementById('konfirmasi-publik-modal').classList.remove('show');
-
-  // Simpan yang hadir
-  if(hadir.length>0){
-    showLoading(true,'MENYIMPAN KONFIRMASI...');
-    await gasCall('konfirmasiPemenangPublik',{arrNoKK:hadir,status:'Hadir'});
-    showLoading(false);
-    toast(`✅ ${hadir.length} pemenang dikonfirmasi hadir.`,'success');
-  }
-
-  // Undi ulang untuk yang tidak hadir
-  if(tidakHadir.length>0){
-    await undiUlangOtomatis(tidakHadir, lastNamaHadiah);
+// Legacy showTab compatibility
+function showTab(name, btn){
+  if(name === 'undian') {
+    closePanel();
   } else {
-    refreshPublic();
+    openPanel(name);
   }
 }
 
-async function semuaTidakHadir() {
-  const allNoKK=lastPemenang.map(p=>p.noKK);
-  document.getElementById('konfirmasi-publik-modal').classList.remove('show');
-  await undiUlangOtomatis(allNoKK, lastNamaHadiah);
-}
-
-async function undiUlangOtomatis(arrNoKK, namaHadiah) {
-  // Tampilkan overlay undi ulang
-  document.getElementById('uu-sub').textContent=`Mencari ${arrNoKK.length} pengganti untuk ${namaHadiah}...`;
-  document.getElementById('undi-ulang-overlay').classList.add('show');
-
-  const r = await gasCall('tidakHadirUndangUlang', {arrNoKK, namaHadiah});
-  document.getElementById('undi-ulang-overlay').classList.remove('show');
-
-  if(!r.success){
-    toast('❌ '+(r.message||'Gagal undi ulang'),'error');
-    refreshPublic();
-    return;
-  }
-
-  toast(`🔄 ${arrNoKK.length} pemenang tidak hadir — mengundi ${r.pemenang.length} pengganti...`,'warn');
-  // Tampilkan slot dengan pemenang baru
-  bukaSlotDenganData(namaHadiah, r.pemenang, r.sisaPool, 'publik');
-}
-
-function skipKonfirmasiPublik(){document.getElementById('konfirmasi-publik-modal').classList.remove('show');toast('Konfirmasi dilewati. Admin dapat mengkonfirmasi nanti.','info');}
-
-// ══════════ AUTH ══════════
-function bukaLogin(){document.getElementById('login-modal').classList.add('show');document.getElementById('login-pass').value='';document.getElementById('login-error').classList.remove('show');setTimeout(()=>document.getElementById('login-pass').focus(),250);}
-function tutupLogin(){document.getElementById('login-modal').classList.remove('show');}
-async function doLogin(){const pass=document.getElementById('login-pass').value;if(!pass)return;const btn=document.getElementById('login-btn');btn.disabled=true;btn.textContent='Memeriksa...';try{const r=await gasCall('loginAdmin',pass);if(r.success){isLoggedIn=true;tutupLogin();masukAdmin();}else{document.getElementById('login-error').textContent=r.message||'Password salah.';document.getElementById('login-error').classList.add('show');document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}}catch(e){document.getElementById('login-error').textContent='Gagal: '+e.message;document.getElementById('login-error').classList.add('show');}btn.disabled=false;btn.textContent='🔓 Masuk ke Dashboard';}
-function masukAdmin(){document.getElementById('public-view').style.display='none';document.getElementById('admin-trigger').style.display='none';document.getElementById('admin-view').classList.add('show');if(publicRefreshTimer){clearInterval(publicRefreshTimer);publicRefreshTimer=null;}showLoading(true,'MEMUAT DATA...');Promise.all([loadSettings(),loadPeserta(),loadHadiah()]).then(()=>{showLoading(false);toast('Dashboard admin siap 🌙','success');});}
-function doLogout(){if(!confirm('Logout dari panel admin?'))return;isLoggedIn=false;document.getElementById('admin-view').classList.remove('show');document.getElementById('public-view').style.display='flex';document.getElementById('admin-trigger').style.display='flex';refreshPublic();startPublicRefresh();toast('Berhasil logout','info');}
-
-// ══════════ PUBLIC VIEW ══════════
-async function refreshPublic(){
-  try{
-    const [settR,statR,hadiahR,pemenangR]=await Promise.all([gasCall('getPublicSettings'),gasCall('getStatistik'),gasCall('getHadiah'),gasCall('getPemenangPublik')]);
-    const s=settR.data||{};appSettings={...appSettings,...s};
-    if(s.pin_undian)currentPIN=s.pin_undian;
-    if(s.tema_suara)temaSuara=s.tema_suara;
-    document.getElementById('pub-nama-acara').textContent=s.nama_acara||'Undian Doorprize';
-    document.getElementById('pub-tahun').textContent=s.tahun_hijriah?`مُحَرَّم ${s.tahun_hijriah}`:'مُحَرَّم ١٤٤٧ هـ';
-    document.getElementById('pub-tema').textContent=s.tema||'';
-    document.getElementById('pub-org').textContent=[s.nama_panitia,s.nama_organisasi].filter(Boolean).join(' • ')||'—';
-    document.getElementById('fs-panitia').textContent=s.nama_organisasi||'';
-    document.getElementById('fs-event-name').textContent=s.nama_acara||'';
-    document.getElementById('fs-ucapan').textContent=s.ucapan_pemenang||'Semoga bermanfaat dan membawa keberkahan 🌙';
-    if(s.ticker_text)document.getElementById('pub-ticker').textContent=s.ticker_text.split('|').map(t=>t.trim()).join(' ☽ ');
-    document.title=(s.nama_acara||'Undian Doorprize')+' — Tahun Baru Islam';
-    if(statR.success){document.getElementById('pub-s-total').textContent=statR.totalPeserta;document.getElementById('pub-s-sisa').textContent=statR.sisaPool;document.getElementById('pub-s-menang').textContent=statR.totalMenang;document.getElementById('pub-s-hadir').textContent=statR.hadir;}
-    const hadList=hadiahR.data||[];
-    document.getElementById('pub-hadiah-list').innerHTML=!hadList.length?'<div class="pub-empty">Belum ada hadiah.</div>':hadList.map((h,i)=>`<div class="hadiah-upcoming-item ${h.status==='Selesai'?'selesai':''}"><div class="hun-num ${h.status==='Selesai'?'done':''}">${h.status==='Selesai'?'✓':i+1}</div><div class="hun-info"><strong>${h.nama}</strong><div class="hun-meta">${h.deskripsi||''}${h.sponsor?' · '+h.sponsor:''} · ${h.jumlah} pemenang</div></div><span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}">${h.status||'Belum'}</span></div>`).join('');
-    renderPublicUndian(hadList);
-    const pList=pemenangR.data||[];const showKK=s.show_kk_publik!=='tidak';
-    document.getElementById('pub-badge-total').textContent=pList.length;
-    document.getElementById('pub-pemenang-list').innerHTML=!pList.length?'<div class="pub-empty">Pengundian belum dimulai.</div>':pList.slice().reverse().map(p=>`<div class="pub-pemenang-item"><span class="hadiah-badge">${p.hadiah}</span><span class="kk">${showKK?formatNoKK(p.noKK):maskKK(p.noKK)}</span><span class="nama">${p.nama||'—'}</span><span class="kel">${p.kelurahan||''}</span></div>`).join('');
-  }catch(e){console.warn('Refresh error:',e);}
-}
-function renderPublicUndian(hadiah){const el=document.getElementById('pub-undian-list');if(!el)return;el.innerHTML=!hadiah||!hadiah.length?'<div class="pub-empty">Belum ada hadiah.</div>':hadiah.map((h,i)=>`<div class="pub-undian-item"><div class="hun-num ${h.status==='Selesai'?'done':''}">${h.status==='Selesai'?'✓':i+1}</div><div class="hun-info" style="flex:1;min-width:0"><strong>${h.nama}</strong><div class="hun-meta">${h.deskripsi||''}${h.sponsor?' · '+h.sponsor:''} · ${h.jumlah} pemenang</div></div><span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}">${h.status||'Belum'}</span><button class="btn-undi-publik" onclick="bukaPin('${escStr(h.nama)}',${h.jumlah})" ${h.status==='Selesai'?'disabled':''}>🔢 Undi</button></div>`).join('');}
-function startPublicRefresh(){if(publicRefreshTimer)clearInterval(publicRefreshTimer);publicRefreshTimer=setInterval(refreshPublic,20000);}
-
-// ══════════ ADMIN TABS ══════════
-function showTab(name,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');if(btn)btn.classList.add('active');if(name==='peserta')loadPeserta();if(name==='hadiah')loadHadiah();if(name==='undian'){loadHadiah();loadRekap();refreshStats();}if(name==='rekap')loadRekap();if(name==='settings')loadSettings();}
-
-// ══════════ SETTINGS ══════════
+// ─── SETTINGS ────────────────────────────────────────────────
 async function loadSettings(){
-  const r=await gasCall('getSettings');appSettings=r.data||{};const s=appSettings;
-  if(s.pin_undian)currentPIN=s.pin_undian;
-  if(s.tema_suara){temaSuara=s.tema_suara;updateSoundThemeUI(s.tema_suara);}
-  document.getElementById('set-nama-acara').value=s.nama_acara||'';
-  document.getElementById('set-tahun').value=s.tahun_hijriah||'';
-  document.getElementById('set-panitia').value=s.nama_panitia||'';
-  document.getElementById('set-org').value=s.nama_organisasi||'';
-  document.getElementById('set-lokasi').value=s.lokasi||'';
-  document.getElementById('set-tema').value=s.tema||'';
-  document.getElementById('set-ticker').value=s.ticker_text||'';
-  document.getElementById('set-show-kk').value=s.show_kk_publik||'ya';
-  document.getElementById('set-ucapan').value=s.ucapan_pemenang||'';
-  document.getElementById('topbar-org').textContent=s.nama_organisasi||s.nama_panitia||'Panitia Doorprize';
+  const r = await gasCall('getSettings');
+  appSettings = r.data || {};
+  const s = appSettings;
+  document.getElementById('set-nama-acara').value = s.nama_acara     || '';
+  document.getElementById('set-tahun').value      = s.tahun_hijriah  || '';
+  document.getElementById('set-panitia').value    = s.nama_panitia   || '';
+  document.getElementById('set-org').value        = s.nama_organisasi|| '';
+  document.getElementById('set-lokasi').value     = s.lokasi         || '';
+  document.getElementById('set-tema').value       = s.tema           || '';
+  applySettings();
 }
+function applySettings(){
+  const s = appSettings;
+  document.getElementById('h-nama-acara').textContent   = s.nama_acara     || 'Undian Doorprize — Tahun Baru Islam';
+  document.getElementById('h-tahun').textContent        = s.tahun_hijriah  ? `مُحَرَّم ${s.tahun_hijriah}` : 'مُحَرَّم ١٤٤٧ هـ';
+  document.getElementById('h-tema').textContent         = s.tema            || '';
+  document.getElementById('header-panitia').textContent = [s.nama_panitia, s.nama_organisasi].filter(Boolean).join(' • ') || '—';
 
-function updateSoundThemeUI(tema){
-  document.querySelectorAll('.sound-theme-btn').forEach(b=>{
-    b.classList.toggle('active', b.dataset.theme===tema);
-  });
+  document.title = (s.nama_acara || 'Undian Doorprize') + ' — Tahun Baru Islam';
 }
-
 async function simpanSettings(){
-  const obj={
-    nama_acara:document.getElementById('set-nama-acara').value.trim(),
-    tahun_hijriah:document.getElementById('set-tahun').value.trim(),
-    nama_panitia:document.getElementById('set-panitia').value.trim(),
-    nama_organisasi:document.getElementById('set-org').value.trim(),
-    lokasi:document.getElementById('set-lokasi').value.trim(),
-    tema:document.getElementById('set-tema').value.trim(),
-    ticker_text:document.getElementById('set-ticker').value.trim(),
-    show_kk_publik:document.getElementById('set-show-kk').value,
-    ucapan_pemenang:document.getElementById('set-ucapan').value.trim(),
-    tema_suara:temaSuara, // ✅ simpan tema suara
+  const obj = {
+    nama_acara:       document.getElementById('set-nama-acara').value.trim(),
+    tahun_hijriah:    document.getElementById('set-tahun').value.trim(),
+    nama_panitia:     document.getElementById('set-panitia').value.trim(),
+    nama_organisasi:  document.getElementById('set-org').value.trim(),
+    lokasi:           document.getElementById('set-lokasi').value.trim(),
+    tema:             document.getElementById('set-tema').value.trim(),
   };
-  Object.assign(appSettings,obj);
+  Object.assign(appSettings, obj);
   showLoading(true,'MENYIMPAN...');
-  await gasCall('saveSettings',obj);
+  await gasCall('saveSettings', obj);
   showLoading(false);
-  document.getElementById('topbar-org').textContent=obj.nama_organisasi||obj.nama_panitia||'Panitia Doorprize';
+  applySettings();
   showAlert('alert-settings','✅ Pengaturan berhasil disimpan.','success');
 }
 
-async function gantiPasswordAdmin(){const oldP=document.getElementById('pw-old').value,newP=document.getElementById('pw-new').value,confP=document.getElementById('pw-confirm').value;if(!oldP||!newP||!confP)return showAlert('alert-pw','❌ Semua kolom wajib diisi.','error');if(newP!==confP)return showAlert('alert-pw','❌ Password baru tidak sama.','error');if(newP.length<6)return showAlert('alert-pw','❌ Minimal 6 karakter.','error');showLoading(true,'MENYIMPAN...');const r=await gasCall('gantiPassword',{oldPass:oldP,newPass:newP});showLoading(false);if(r.success){showAlert('alert-pw','✅ Password berhasil diganti.','success');['pw-old','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');}else showAlert('alert-pw','❌ '+(r.message||'Gagal.'),'error');}
-
-// ══════════ PESERTA ══════════
-async function loadPeserta(){showLoading(true,'MEMUAT PESERTA...');try{const r=await gasCall('getPeserta');allPeserta=r.data||[];renderPeserta(allPeserta);await refreshStats();}catch(e){toast('Gagal memuat: '+e.message,'error');}showLoading(false);}
-function renderPeserta(data){const tb=document.getElementById('tbody-peserta');document.getElementById('count-display').textContent=data.length;if(!data.length){tb.innerHTML='<tr class="empty-row"><td colspan="6">Tidak ada data.</td></tr>';return;}tb.innerHTML=data.map((p,i)=>`<tr><td style="color:var(--muted);font-size:.76rem">${i+1}</td><td><code style="font-size:.8rem;color:var(--gold2)">${formatNoKK(p.noKK)}</code></td><td style="font-weight:600">${p.nama||'—'}</td><td>${p.kelurahan||'—'}</td><td style="color:var(--muted);font-size:.78rem">${p.rt||'—'}/${p.rw||'—'}</td><td><button class="btn btn-red btn-sm" onclick="hapusPeserta('${p.noKK}')">✕</button></td></tr>`).join('');}
-function filterPeserta(){const q=document.getElementById('search-peserta').value.toLowerCase();renderPeserta(allPeserta.filter(p=>p.noKK.toLowerCase().includes(q)||(p.nama||'').toLowerCase().includes(q)||(p.kelurahan||'').toLowerCase().includes(q)));}
-async function hapusPeserta(noKK){if(!confirm(`Hapus peserta ${noKK}?`))return;showLoading(true);await gasCall('hapusPeserta',noKK);toast('Peserta dihapus','warn');await loadPeserta();}
-async function hapusSemuaKonfirmasi(){if(!confirm('Hapus SEMUA peserta?'))return;if(!confirm('Yakin?'))return;showLoading(true,'MENGHAPUS...');await gasCall('hapusSemuaPeserta');showLoading(false);toast('Semua peserta dihapus','warn');await loadPeserta();}
-async function tambahManual(){const kk=document.getElementById('inp-kk').value.replace(/\D/g,'').trim(),nm=document.getElementById('inp-nama').value.trim(),kel=document.getElementById('inp-kel').value.trim(),rt=document.getElementById('inp-rt').value.trim(),rw=document.getElementById('inp-rw').value.trim();if(kk.length!==16)return showAlert('alert-manual','❌ No KK harus 16 digit.','error');showLoading(true);const r=await gasCall('tambahPeserta',{noKK:kk,nama:nm,kelurahan:kel,rt,rw});showLoading(false);if(r.added>0){showAlert('alert-manual','✅ Berhasil ditambahkan.','success');toast('Peserta ditambahkan','success');['inp-kk','inp-nama','inp-kel','inp-rt','inp-rw'].forEach(id=>document.getElementById(id).value='');loadPeserta();}else if(r.dupes>0)showAlert('alert-manual','⚠️ No KK sudah terdaftar.','warn');else showAlert('alert-manual','❌ Format tidak valid.','error');}
-function handleDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)processFile(f);}
-function handleFileUpload(e){const f=e.target.files[0];if(f)processFile(f);}
-function processFile(file){if(!file.name.toLowerCase().endsWith('.csv'))return showAlert('alert-upload','❌ Hanya file CSV.','error');const r=new FileReader();r.onload=e=>parseCSV(e.target.result);r.readAsText(file,'UTF-8');}
-async function parseCSV(text){const lines=text.split('\n').filter(l=>l.trim());const isHeader=/^[a-zA-Z\s]/i.test(lines[0].split(',')[0]);const rows=lines.slice(isHeader?1:0).map(l=>{const cols=l.split(',').map(c=>c.trim().replace(/"/g,''));return[cols[0]||'',cols[1]||'',cols[2]||'',cols[3]||'',cols[4]||''];}).filter(r=>r[0].replace(/\D/g,'').length>0);if(!rows.length)return showAlert('alert-upload','❌ File kosong.','error');document.getElementById('upload-progress').style.display='block';let added=0,dupes=0,invalid=0;const BATCH=200;for(let i=0;i<rows.length;i+=BATCH){const batch=rows.slice(i,i+BATCH);const pct=Math.round(((i+batch.length)/rows.length)*100);document.getElementById('progress-bar').style.width=pct+'%';document.getElementById('progress-text').textContent=`Memproses ${i+batch.length} / ${rows.length} baris...`;const r=await gasCall('uploadPeserta',batch);added+=r.added||0;dupes+=r.dupes||0;invalid+=r.invalid||0;}document.getElementById('upload-progress').style.display='none';showAlert('alert-upload',`✅ Berhasil: <strong>${added}</strong> &nbsp; ⚠ Duplikat: <strong>${dupes}</strong> &nbsp; ❌ Tidak valid: <strong>${invalid}</strong>`,added>0?'success':'warn');if(added>0){toast(`${added} peserta ditambahkan`,'success');loadPeserta();}}
-
-// ══════════ STATS ══════════
-async function refreshStats(){const r=await gasCall('getStatistik');if(!r.success)return;document.getElementById('s-total').textContent=r.totalPeserta;document.getElementById('s-aktif').textContent=r.sisaPool;document.getElementById('s-menang').textContent=r.totalMenang;document.getElementById('s-hadir').textContent=r.hadir;document.getElementById('u-pool').textContent=r.sisaPool;document.getElementById('u-hadir').textContent=r.hadir;}
-
-// ══════════ HADIAH ══════════
-async function loadHadiah(){const r=await gasCall('getHadiah');allHadiah=r.data||[];renderHadiah();renderUndianList();}
-function renderHadiah(){const el=document.getElementById('hadiah-list');if(!allHadiah.length){el.innerHTML='<p style="color:var(--muted);font-size:.84rem;margin-bottom:10px">Belum ada hadiah.</p>';return;}el.innerHTML=allHadiah.map((h,i)=>`<div class="hadiah-item"><div class="hadiah-num">${i+1}</div><div class="hadiah-info"><strong>${h.nama}</strong><div class="meta">${h.deskripsi||''} ${h.sponsor?'· '+h.sponsor:''} · ${h.jumlah} pemenang</div></div><span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}">${h.status||'Belum'}</span><button class="btn btn-red btn-sm" onclick="hapusHadiah(${i})">✕</button></div>`).join('');}
-function hapusHadiah(i){allHadiah.splice(i,1);renderHadiah();}
-function tambahHadiah(){const nama=document.getElementById('inp-h-nama').value.trim(),desc=document.getElementById('inp-h-desc').value.trim(),sponsor=document.getElementById('inp-h-sponsor').value.trim(),jml=parseInt(document.getElementById('inp-h-jml').value)||1;if(!nama)return showAlert('alert-hadiah','❌ Nama hadiah tidak boleh kosong.','error');allHadiah.push({nama,deskripsi:desc,sponsor,jumlah:jml,status:'Belum'});['inp-h-nama','inp-h-desc','inp-h-sponsor'].forEach(id=>document.getElementById(id).value='');document.getElementById('inp-h-jml').value='1';renderHadiah();showAlert('alert-hadiah',`✅ "${nama}" ditambahkan. Klik <strong>Simpan Semua</strong>.`,'info');}
-async function simpanSemuaHadiah(){if(!allHadiah.length)return showAlert('alert-hadiah','❌ Belum ada hadiah.','error');showLoading(true,'MENYIMPAN...');await gasCall('simpanHadiah',allHadiah);await loadHadiah();showLoading(false);toast('Hadiah disimpan','success');showAlert('alert-hadiah','✅ Semua hadiah berhasil disimpan.','success');}
-function renderUndianList(){const el=document.getElementById('undian-list');document.getElementById('u-selesai').textContent=allHadiah.filter(h=>h.status==='Selesai').length;if(!allHadiah.length){el.innerHTML='<p style="color:var(--muted);text-align:center;padding:28px">Belum ada hadiah.</p>';return;}el.innerHTML=allHadiah.map((h,i)=>`<div class="hadiah-item"><div class="hadiah-num">${i+1}</div><div class="hadiah-info"><strong>${h.nama}</strong><div class="meta">${h.deskripsi||''} ${h.sponsor?'· '+h.sponsor:''} · ${h.jumlah} pemenang</div></div><span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}">${h.status||'Belum'}</span><button class="btn btn-gold btn-sm" onclick="mulaiUndianAdmin('${escStr(h.nama)}',${h.jumlah})" ${h.status==='Selesai'?'disabled':''}>🎰 Undi</button></div>`).join('');}
-
-// ══════════ SLOT MACHINE ══════════
-async function mulaiUndianAdmin(namaHadiah,jumlah){if(slotRunning)return;slotRunning=true;slotMode='admin';showLoading(true,'MENGACAK...');const r=await gasCall('lakukan_undian',{namaHadiah,jumlahPemenang:jumlah});showLoading(false);if(!r.success){slotRunning=false;slotMode='';return toast('❌ '+r.message,'error');}bukaSlotDenganData(namaHadiah,r.pemenang,r.sisaPool,'admin');}
-async function mulaiUndianPublik(namaHadiah,jumlah){if(slotRunning)return;slotRunning=true;slotMode='publik';showLoading(true,'MENGACAK...');const r=await gasCall('lakukan_undian',{namaHadiah,jumlahPemenang:jumlah});showLoading(false);if(!r.success){slotRunning=false;slotMode='';return toast('❌ '+r.message,'error');}bukaSlotDenganData(namaHadiah,r.pemenang,r.sisaPool,'publik');}
-
-function bukaSlotDenganData(namaHadiah,pemenang,sisaPool,mode){
-  slotMode=mode;
-  document.getElementById('slot-hadiah-label').textContent='🎁 '+namaHadiah;
-  document.getElementById('slot-title').textContent='✨ PENGUNDIAN DOORPRIZE ✨';
-  document.getElementById('slot-kk').className='';
-  document.getElementById('slot-kk').textContent='• • • •  • • • •  • • • •  • • • •';
-  document.getElementById('slot-nama').textContent='';
-  document.getElementById('slot-kel').textContent='';
-  document.getElementById('slot-sisa').textContent='';
-  document.getElementById('slot-multi-list').style.display='none';
-  document.getElementById('slot-actions').innerHTML='';
-  document.getElementById('slot-overlay').classList.add('show');
-  if(pemenang.length===1)animasiSingle(pemenang[0],namaHadiah,sisaPool);
-  else animasiMulti(pemenang,namaHadiah,sisaPool);
+// ─── PESERTA ─────────────────────────────────────────────────
+async function loadPeserta(){
+  showLoading(true,'MEMUAT PESERTA...');
+  try {
+    const r = await gasCall('getPeserta');
+    allPeserta = r.data || [];
+    renderPeserta(allPeserta);
+    await refreshStats();
+  } catch(e){ toast('Gagal memuat peserta: '+e.message,'error'); }
+  showLoading(false);
 }
-
-function animasiSingle(p,namaHadiah,sisaPool){const elKK=document.getElementById('slot-kk'),elNama=document.getElementById('slot-nama');document.getElementById('slot-index-label').textContent='Mengacak...';let tick=0;const iv=setInterval(()=>{elKK.textContent=Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})/g,'$1 ').trim();elNama.textContent='...';playTick();tick++;if(tick>=70){clearInterval(iv);slowReveal(p,namaHadiah,sisaPool,0);}},50);}
-function slowReveal(p,namaHadiah,sisaPool,step){const elKK=document.getElementById('slot-kk'),elNama=document.getElementById('slot-nama');const delays=[300,400,500,600,700,900,1100];if(step<delays.length){setTimeout(()=>{const rev=p.noKK.slice(0,Math.round((step+1)/delays.length*16));const mask='?'.repeat(16-rev.length);elKK.textContent=(rev+mask).replace(/(\d{4}|\?{4})/g,'$1 ').trim();playSlowTick(800+step*80);slowReveal(p,namaHadiah,sisaPool,step+1);},delays[step]);}else{elKK.textContent=formatNoKK(p.noKK);elKK.className='final';elNama.textContent=p.nama||'—';document.getElementById('slot-kel').textContent=p.kelurahan?'📍 '+p.kelurahan:'';document.getElementById('slot-sisa').textContent=`Sisa pool: ${sisaPool} peserta`;document.getElementById('slot-index-label').textContent='🏆 PEMENANG';playFanfare();renderAksiSlot([p],namaHadiah);setTimeout(refreshPublic,500);}}
-function animasiMulti(pemenang,namaHadiah,sisaPool){document.getElementById('slot-index-label').textContent=`Mengacak ${pemenang.length} pemenang...`;const elKK=document.getElementById('slot-kk'),elNama=document.getElementById('slot-nama');let tick=0;const iv=setInterval(()=>{elKK.textContent=Array.from({length:16},()=>Math.floor(Math.random()*10)).join('').replace(/(\d{4})/g,'$1 ').trim();elNama.textContent='...';playTick();tick++;if(tick>=60){clearInterval(iv);revealMulti(pemenang,namaHadiah,sisaPool,0);}},50);}
-function revealMulti(pemenang,namaHadiah,sisaPool,idx){if(idx>=pemenang.length){const listEl=document.getElementById('slot-multi-list');listEl.style.display='block';listEl.innerHTML=pemenang.map((p,i)=>`<div class="multi-item"><span class="hadiah-num" style="width:26px;height:26px;font-size:.74rem">${i+1}</span><span class="mkk">${formatNoKK(p.noKK)}</span><span class="mnm">${p.nama||'—'}</span></div>`).join('');document.getElementById('slot-kk').textContent=`${pemenang.length} Pemenang`;document.getElementById('slot-kk').className='final';document.getElementById('slot-nama').textContent='';document.getElementById('slot-index-label').textContent='🏆 SEMUA PEMENANG';document.getElementById('slot-sisa').textContent=`Sisa pool: ${sisaPool} peserta`;playFanfare();renderAksiSlot(pemenang,namaHadiah);setTimeout(refreshPublic,500);return;}document.getElementById('slot-index-label').textContent=`Pemenang ${idx+1} dari ${pemenang.length}`;slowReveal(pemenang[idx],namaHadiah,sisaPool,0);setTimeout(()=>revealMulti(pemenang,namaHadiah,sisaPool,idx+1),3800);}
-
-function renderAksiSlot(pemenang,namaHadiah){
-  const isAdmin=slotMode==='admin';const p=pemenang[0];
-  const pJSON=encodeURIComponent(JSON.stringify(pemenang));let html='';
-  if(isAdmin){
-    if(pemenang.length===1){html+=`<button class="btn btn-green" onclick="konfirmasiHadir('${p.noKK}','${escStr(namaHadiah)}')">✅ Hadir</button><button class="btn btn-red btn-sm" onclick="batalkanPemenangAdmin('${p.noKK}','${escStr(namaHadiah)}')">❌ Tidak Hadir</button>`;}
-    else{html+=`<button class="btn btn-green" onclick="konfirmasiSemuaHadir(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">✅ Semua Hadir</button><button class="btn btn-red btn-sm" onclick="bukaKonfirmasiAdmin(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">⚙ Konfirmasi Per Orang</button>`;}
-  }else{
-    html+=`<button class="btn btn-green" onclick="bukaKonfirmasiPublik(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">✅ Konfirmasi Kehadiran</button>`;
-  }
-  if(pemenang.length===1){html+=`<button class="btn btn-teal btn-sm" onclick="bukaFullscreenSingle('${p.noKK}','${escStr(p.nama)}','${escStr(namaHadiah)}','${escStr(p.kelurahan||'')}')">🖥</button>`;}
-  else{html+=`<button class="btn btn-teal btn-sm" onclick="bukaFullscreenMulti(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">🖥 Fullscreen</button>`;}
-  html+=`<button class="btn btn-dark btn-sm" onclick="tutupSlotAktif()">Tutup</button>`;
-  document.getElementById('slot-actions').innerHTML=html;
-}
-
-function decodeJSON(s){return JSON.parse(decodeURIComponent(s));}
-function tutupSlotAktif(){document.getElementById('slot-overlay').classList.remove('show');slotRunning=false;slotMode='';if(isLoggedIn){loadHadiah();loadRekap();}else{refreshPublic();}}
-
-// ══════════ KONFIRMASI ADMIN ══════════
-async function konfirmasiHadir(noKK,namaHadiah){showLoading(true,'MENYIMPAN...');await gasCall('konfirmasiPemenang',{noKK,status:'Hadir',catatan:''});showLoading(false);tutupSlotAktif();toast('Konfirmasi hadir disimpan ✅','success');refreshPublic();}
-async function konfirmasiSemuaHadir(pemenang,namaHadiah){showLoading(true,'MENYIMPAN...');for(const p of pemenang)await gasCall('konfirmasiPemenang',{noKK:p.noKK,status:'Hadir',catatan:''});showLoading(false);tutupSlotAktif();toast('Semua pemenang dikonfirmasi hadir ✅','success');refreshPublic();}
-async function batalkanPemenangAdmin(noKK,namaHadiah){
-  if(!confirm('Pemenang ini tidak hadir dan akan diundi ulang?'))return;
-  tutupSlotAktif();
-  document.getElementById('uu-sub').textContent=`Mencari pengganti untuk ${namaHadiah}...`;
-  document.getElementById('undi-ulang-overlay').classList.add('show');
-  const r=await gasCall('tidakHadirUndangUlang',{arrNoKK:[noKK],namaHadiah});
-  document.getElementById('undi-ulang-overlay').classList.remove('show');
-  if(!r.success){toast('❌ '+(r.message||'Gagal undi ulang'),'error');loadHadiah();refreshPublic();return;}
-  toast('🔄 Mengundi pengganti...','warn');
-  bukaSlotDenganData(namaHadiah,r.pemenang,r.sisaPool,'admin');
-}
-// Konfirmasi per orang untuk multi-pemenang (admin)
-function bukaKonfirmasiAdmin(pemenang,namaHadiah){
-  // Reuse modal konfirmasi publik tapi tanpa undi ulang otomatis
-  lastPemenang=pemenang;lastNamaHadiah=namaHadiah;slotMode='admin-konfirm';
-  document.getElementById('kp-title').textContent=`⚙ Konfirmasi ${namaHadiah}`;
-  document.getElementById('kp-sub').textContent='Centang yang hadir. Yang tidak dicentang akan diundi ulang.';
-  const showKK=(appSettings.show_kk_publik||'ya')!=='tidak';
-  document.getElementById('kp-list').innerHTML=pemenang.map((p,i)=>`<div class="konfirm-item"><input type="checkbox" class="konfirm-cb" id="cb-${i}" checked><div class="konfirm-num">${i+1}</div><div class="konfirm-info"><div class="konfirm-kk">${showKK?formatNoKK(p.noKK):maskKK(p.noKK)}</div><div class="konfirm-nama">${p.nama||'—'}</div><div class="konfirm-kel">${p.kelurahan||''}</div></div></div>`).join('');
-  document.getElementById('konfirmasi-publik-modal').classList.add('show');
-}
-async function konfirmasiHadirDariRekap(noKK,namaHadiah){showLoading(true,'MENYIMPAN...');await gasCall('konfirmasiPemenang',{noKK,status:'Hadir',catatan:''});showLoading(false);toast('Konfirmasi hadir disimpan ✅','success');loadRekap();refreshPublic();}
-
-// ══════════ FULLSCREEN ══════════
-function bukaFullscreenSingle(noKK,nama,hadiah,kel){const showKK=(appSettings.show_kk_publik||'ya')!=='tidak';document.getElementById('fs-hadiah-name').textContent='🎁 '+hadiah;document.getElementById('fs-kk').textContent=showKK?formatNoKK(noKK):maskKK(noKK);document.getElementById('fs-nama').textContent=nama||'—';document.getElementById('fs-kel').textContent=kel?'📍 '+kel:'';document.getElementById('fs-kk').style.display='';document.getElementById('fs-nama').style.display='';document.getElementById('fs-kel').style.display='';document.getElementById('fs-multi-list').style.display='none';document.getElementById('fullscreen-overlay').classList.add('show');buatConfetti();playFanfare();}
-function bukaFullscreenMulti(pemenang,hadiah){const showKK=(appSettings.show_kk_publik||'ya')!=='tidak';document.getElementById('fs-hadiah-name').textContent='🎁 '+hadiah;document.getElementById('fs-kk').style.display='none';document.getElementById('fs-nama').style.display='none';document.getElementById('fs-kel').style.display='none';const ml=document.getElementById('fs-multi-list');ml.style.display='block';ml.innerHTML=pemenang.map((p,i)=>`<div class="fs-multi-item"><div class="fs-multi-num">${i+1}</div><div><div class="fs-multi-kk">${showKK?formatNoKK(p.noKK):maskKK(p.noKK)}</div><div class="fs-multi-nm">${p.nama||'—'}</div><div class="fs-multi-kel">${p.kelurahan||''}</div></div></div>`).join('');document.getElementById('fullscreen-overlay').classList.add('show');buatConfetti();playFanfare();}
-function tutupFullscreen(){document.getElementById('fullscreen-overlay').classList.remove('show');document.getElementById('confetti-box').innerHTML='';}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){tutupFullscreen();if(!slotRunning)tutupSlotAktif();}});
-
-// ══════════ CONFETTI ══════════
-function buatConfetti(){const box=document.getElementById('confetti-box');box.innerHTML='';const colors=['#D4AF37','#F5D061','#22a85a','#fff','#fbbf24','#86efac','#4ade80','#fde68a'];const isMobile=window.innerWidth<600;for(let i=0;i<(isMobile?60:120);i++){const el=document.createElement('div');el.className='confetti-piece';el.style.cssText=`left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${2+Math.random()*2.5}s;animation-delay:${Math.random()*1.5}s;width:${5+Math.random()*9}px;height:${7+Math.random()*12}px;transform:rotate(${Math.random()*360}deg);border-radius:${Math.random()<.3?'50%':'2px'}`;box.appendChild(el);}setTimeout(()=>box.innerHTML='',7000);}
-
-// ══════════ REKAP ══════════
-async function loadRekap(){const r=await gasCall('getRekap');allRekap=r.data||[];renderRekap(allRekap);renderPemenangToday(allRekap);refreshStats();}
-function renderRekap(data){const c=document.getElementById('rekap-per-hadiah');if(!data.length){c.innerHTML='<p style="color:var(--muted);text-align:center;padding:28px">Belum ada pemenang.</p>';return;}const byH={};data.forEach(d=>{if(!byH[d.hadiah])byH[d.hadiah]=[];byH[d.hadiah].push(d);});c.innerHTML=Object.entries(byH).map(([hadiah,items])=>`<div style="margin-bottom:18px"><h3 style="color:var(--gold2);font-size:.88rem;margin-bottom:8px;display:flex;align-items:center;gap:8px">🎁 ${hadiah} <span class="badge badge-teal">${items.filter(x=>x.konfirmasi==='Hadir').length} hadir</span> ${items.filter(x=>x.konfirmasi==='Tidak Hadir').length>0?`<span class="badge badge-red">${items.filter(x=>x.konfirmasi==='Tidak Hadir').length} tidak hadir</span>`:''}</h3><div class="tbl-wrap"><table><thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Kelurahan</th><th>Waktu</th><th>Status</th></tr></thead><tbody>${items.map((d,i)=>`<tr style="${d.konfirmasi==='Tidak Hadir'?'opacity:.5':''}"><td style="color:var(--muted)">${i+1}</td><td><code style="font-size:.78rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td><td style="font-weight:600">${d.nama||'—'}</td><td>${d.kelurahan||'—'}</td><td style="font-size:.76rem;color:var(--muted);white-space:nowrap">${d.waktu||'—'}</td><td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':d.konfirmasi==='Tidak Hadir'?'badge-red':'badge-muted'}">${d.konfirmasi||'—'}</span></td></tr>`).join('')}</tbody></table></div></div>`).join('');}
-function renderPemenangToday(data){const tb=document.getElementById('tbody-pemenang-today');const aktif=data.filter(d=>d.konfirmasi!=='Tidak Hadir');if(!aktif.length){tb.innerHTML='<tr class="empty-row"><td colspan="7">Belum ada pemenang aktif.</td></tr>';return;}tb.innerHTML=aktif.map((d,i)=>`<tr><td style="color:var(--muted);font-size:.76rem">${i+1}</td><td><span class="badge badge-gold">${d.hadiah}</span></td><td><code style="font-size:.78rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td><td style="font-weight:600">${d.nama||'—'}</td><td>${d.kelurahan||'—'}</td><td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':'badge-muted'}">${d.konfirmasi||'—'}</span></td><td style="display:flex;gap:4px;flex-wrap:wrap">${d.konfirmasi!=='Hadir'?`<button class="btn btn-green btn-sm" onclick="konfirmasiHadirDariRekap('${d.noKK}','${escStr(d.hadiah)}')">✅</button>`:''}<button class="btn btn-teal btn-sm" onclick="bukaFullscreenSingle('${d.noKK}','${escStr(d.nama)}','${escStr(d.hadiah)}','${escStr(d.kelurahan||'')}')">🖥</button></td></tr>`).join('');}
-
-function exportCSV(){if(!allRekap.length)return toast('Belum ada data rekap','warn');const header='No,Hadiah,No KK,Nama,Kelurahan,Waktu,Konfirmasi\n';const rows=allRekap.map((d,i)=>`${i+1},"${d.hadiah}","${d.noKK}","${d.nama}","${d.kelurahan||''}","${d.waktu}","${d.konfirmasi}"`).join('\n');const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);Object.assign(document.createElement('a'),{href:url,download:`rekap-doorprize-${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.csv`}).click();toast('File CSV berhasil didownload','success');}
-
-// ══════════ RESET ══════════
-async function resetPemenangKonfirmasi(){if(!confirm('Reset semua data pemenang?'))return;showLoading(true,'MERESET...');await gasCall('resetPemenang');showLoading(false);toast('Data pemenang direset','warn');loadHadiah();loadRekap();refreshStats();refreshPublic();}
-async function resetSemuaKonfirmasi(){if(!confirm('⚠️ RESET SEMUA DATA?'))return;if(!confirm('Tidak bisa dibatalkan. Lanjutkan?'))return;showLoading(true,'MERESET...');await gasCall('resetSemua');showLoading(false);allPeserta=[];allHadiah=[];allRekap=[];toast('Semua data direset','warn');loadPeserta();loadHadiah();loadRekap();refreshPublic();}
-
-// ══════════ LIVE VIEW ══════════
-async function bukaLiveView(){await refreshPublic();document.getElementById('lv-inner').innerHTML=document.getElementById('public-view').innerHTML;document.getElementById('liveview-overlay').classList.add('show');}
-async function refreshLiveView(){await refreshPublic();document.getElementById('lv-inner').innerHTML=document.getElementById('public-view').innerHTML;toast('Data live view diperbarui','success');}
-function tutupLiveView(){document.getElementById('liveview-overlay').classList.remove('show');}
-
-// ══════════ INIT ══════════
-window.onload=async()=>{
-  if(GAS_URL==='GANTI_DENGAN_URL_DEPLOY_APPS_SCRIPT_ANDA'){
-    document.body.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#060d0f;color:#D4AF37;font-family:sans-serif;text-align:center;padding:24px"><div><div style="font-size:3rem;margin-bottom:16px">⚙️</div><h2 style="margin-bottom:12px">Konfigurasi Diperlukan</h2><p style="color:#7a9a88;max-width:400px">Buka file <code style="color:#F5D061">index.html</code> dan ganti nilai <code style="color:#F5D061">GAS_URL</code> dengan URL deploy Google Apps Script Anda.</p></div></div>`;
+function renderPeserta(data){
+  const tb = document.getElementById('tbody-peserta');
+  document.getElementById('count-display').textContent = data.length;
+  if(!data.length){
+    tb.innerHTML='<tr class="empty-row"><td colspan="6">Tidak ada data peserta.</td></tr>';
     return;
   }
+  tb.innerHTML = data.map((p,i)=>`<tr>
+    <td style="color:var(--muted);font-size:.85rem">${i+1}</td>
+    <td><code style="font-size:.9rem;color:var(--gold2)">${formatNoKK(p.noKK)}</code></td>
+    <td style="font-weight:700">${p.nama||'<em style="color:var(--muted)">—</em>'}</td>
+    <td>${p.kelurahan||'—'}</td>
+    <td style="color:var(--muted);font-size:.88rem">${p.rt||'—'}/${p.rw||'—'}</td>
+    <td><button class="btn btn-red btn-sm" onclick="hapusPesertaFn('${p.noKK}')">✕</button></td>
+  </tr>`).join('');
+}
+function filterPeserta(){
+  const q = document.getElementById('search-peserta').value.toLowerCase();
+  renderPeserta(allPeserta.filter(p=>
+    p.noKK.toLowerCase().includes(q)||
+    (p.nama||'').toLowerCase().includes(q)||
+    (p.kelurahan||'').toLowerCase().includes(q)
+  ));
+}
+async function hapusPesertaFn(noKK){
+  if(!confirm(`Hapus peserta ${noKK}?`)) return;
+  showLoading(true);
+  await gasCall('hapusPeserta', noKK);
+  toast('Peserta dihapus','warn');
+  await loadPeserta();
+}
+async function hapusSemuaKonfirmasi(){
+  if(!confirm('Hapus SEMUA peserta? Tindakan ini tidak bisa dibatalkan.')) return;
+  if(!confirm('Yakin? Data peserta akan hilang.')) return;
+  showLoading(true,'MENGHAPUS...');
+  await gasCall('hapusSemuaPeserta');
+  showLoading(false);
+  toast('Semua peserta dihapus','warn');
+  await loadPeserta();
+}
+async function tambahManual(){
+  const kk  = document.getElementById('inp-kk').value.replace(/\D/g,'').trim();
+  const nm  = document.getElementById('inp-nama').value.trim();
+  const kel = document.getElementById('inp-kel').value.trim();
+  const rt  = document.getElementById('inp-rt').value.trim();
+  const rw  = document.getElementById('inp-rw').value.trim();
+  if(kk.length!==16) return showAlert('alert-manual','❌ No KK harus 16 digit angka.','error');
+  showLoading(true);
+  const r = await gasCall('tambahPeserta', kk, nm, kel, rt, rw);
+  showLoading(false);
+  if(r.added>0){
+    showAlert('alert-manual','✅ Peserta berhasil ditambahkan.','success');
+    toast('Peserta ditambahkan','success');
+    ['inp-kk','inp-nama','inp-kel','inp-rt','inp-rw'].forEach(id=>document.getElementById(id).value='');
+    loadPeserta();
+  } else if(r.dupes>0) showAlert('alert-manual','⚠️ No KK sudah terdaftar (duplikat).','warn');
+  else showAlert('alert-manual','❌ Format No KK tidak valid.','error');
+}
+
+// ─── FILE UPLOAD ─────────────────────────────────────────────
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+function handleFileUpload(e){
+  const file = e.target.files[0];
+  if(file) processFile(file);
+}
+function processFile(file){
+  const name = file.name.toLowerCase();
+  if(!name.endsWith('.csv')) return showAlert('alert-upload','❌ Hanya file CSV (.csv) yang didukung.','error');
+  const reader = new FileReader();
+  reader.onload = e => parseCSV(e.target.result);
+  reader.readAsText(file,'UTF-8');
+}
+async function parseCSV(text){
+  const lines  = text.split('\n').filter(l=>l.trim());
+  const isHdr  = /^[a-zA-Z\s]/i.test(lines[0].split(',')[0]);
+  const start  = isHdr ? 1 : 0;
+  const rows   = lines.slice(start).map(l=>{
+    const cols = l.split(',').map(c=>c.trim().replace(/"/g,''));
+    return [cols[0]||'',cols[1]||'',cols[2]||'',cols[3]||'',cols[4]||''];
+  }).filter(r=>r[0].replace(/\D/g,'').length>0);
+  if(!rows.length) return showAlert('alert-upload','❌ File kosong atau format tidak sesuai.','error');
+  document.getElementById('upload-progress').style.display='block';
+  const BATCH = 200;
+  let added=0,dupes=0,invalid=0;
+  for(let i=0;i<rows.length;i+=BATCH){
+    const batch=rows.slice(i,i+BATCH);
+    const pct=Math.round(((i+batch.length)/rows.length)*100);
+    document.getElementById('progress-bar').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Memproses ${i+batch.length} / ${rows.length} baris...`;
+    const r=await gasCall('uploadPeserta',batch);
+    added+=r.added||0; dupes+=r.dupes||0; invalid+=r.invalid||0;
+  }
+  document.getElementById('upload-progress').style.display='none';
+  showAlert('alert-upload',
+    `✅ Berhasil: <strong>${added}</strong> &nbsp;⚠ Duplikat: <strong>${dupes}</strong> &nbsp;❌ Tidak valid: <strong>${invalid}</strong>`,
+    added>0?'success':'warn');
+  if(added>0){ toast(`${added} peserta ditambahkan`,'success'); loadPeserta(); }
+}
+
+// ─── STATS ───────────────────────────────────────────────────
+async function refreshStats(){
+  const r = await gasCall('getStatistik');
+  if(!r.success) return;
+  document.getElementById('s-total').textContent  = r.totalPeserta;
+  document.getElementById('s-aktif').textContent  = r.sisaPool;
+  document.getElementById('s-menang').textContent = r.totalTerpilih;
+  document.getElementById('s-sisa').textContent   = r.sisaPool;
+  document.getElementById('u-pool').textContent   = r.sisaPool;
+  document.getElementById('u-hadir').textContent  = r.hadir;
+}
+
+// ─── HADIAH ──────────────────────────────────────────────────
+async function loadHadiah(){
+  const r = await gasCall('getHadiah');
+  allHadiah = r.data || [];
+  renderHadiah();
+  renderUndianList();
+}
+function renderHadiah(){
+  const el = document.getElementById('hadiah-list');
+  if(!allHadiah.length){
+    el.innerHTML='<p style="color:var(--muted);font-size:.9rem;margin-bottom:14px">Belum ada hadiah. Tambah di bawah.</p>';
+    return;
+  }
+  el.innerHTML = allHadiah.map((h,i)=>`
+    <div class="hadiah-item">
+      <div class="hadiah-num">${i+1}</div>
+      <div class="hadiah-info">
+        <strong>${h.nama} ${h.tipe==='utama'?'<span class="badge badge-gold">🌟 Utama</span>':''}</strong>
+        <div class="meta">${h.deskripsi||''} ${h.sponsor?'• Sponsor: <em>'+h.sponsor+'</em>':''} • ${h.jumlah} pemenang</div>
+      </div>
+      <span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}" style="margin-right:8px">${h.status||'Belum'}</span>
+      <button class="btn btn-red btn-sm" onclick="hapusHadiah(${i})">✕</button>
+    </div>`).join('');
+}
+function hapusHadiah(i){ allHadiah.splice(i,1); renderHadiah(); }
+function tambahHadiah(){
+  const nama    = document.getElementById('inp-h-nama').value.trim();
+  const desc    = document.getElementById('inp-h-desc').value.trim();
+  const sponsor = document.getElementById('inp-h-sponsor').value.trim();
+  const jml     = parseInt(document.getElementById('inp-h-jml').value)||1;
+  const isUtama = document.getElementById('inp-h-utama').checked;
+  if(!nama) return showAlert('alert-hadiah','❌ Nama hadiah tidak boleh kosong.','error');
+  allHadiah.push({nama,deskripsi:desc,sponsor,jumlah:jml,status:'Belum',tipe:isUtama?'utama':'biasa'});
+  document.getElementById('inp-h-nama').value='';
+  document.getElementById('inp-h-desc').value='';
+  document.getElementById('inp-h-sponsor').value='';
+  document.getElementById('inp-h-jml').value='1';
+  document.getElementById('inp-h-utama').checked=false;
+  renderHadiah();
+  showAlert('alert-hadiah',`✅ "${nama}"${isUtama?' (🌟 Hadiah Utama)':''} ditambahkan. Klik <strong>Simpan Semua</strong> untuk menyimpan.`,'info');
+}
+async function simpanSemuaHadiah(){
+  if(!allHadiah.length) return showAlert('alert-hadiah','❌ Belum ada hadiah.','error');
+  showLoading(true,'MENYIMPAN HADIAH...');
+  await gasCall('simpanHadiah', allHadiah);
+  await loadHadiah();
+  showLoading(false);
+  toast('Hadiah berhasil disimpan','success');
+  showAlert('alert-hadiah','✅ Semua hadiah berhasil disimpan ke spreadsheet.','success');
+}
+
+// ─── UNDIAN LIST ─────────────────────────────────────────────
+let lockedPrizeIdx = null; // index hadiah yang sedang "siap diundi", hadiah lain non-aktif
+
+function renderUndianList(){
+  const el = document.getElementById('undian-list');
+  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
+  const selesai = hadiahBiasa.filter(h=>h.status==='Selesai').length;
+  document.getElementById('u-selesai').textContent = selesai;
+
+  const pfCount = document.getElementById('pf-count');
+  const sisa = hadiahBiasa.length - selesai;
+  if(pfCount) pfCount.textContent = `${hadiahBiasa.length} hadiah${sisa > 0 ? ` • ${sisa} sisa` : ' • semua selesai'}`;
+
+  // Auto-unlock jika hadiah yang terpilih sudah dapat pemenang (Selesai)
+  if(lockedPrizeIdx !== null && (!allHadiah[lockedPrizeIdx] || allHadiah[lockedPrizeIdx].status === 'Selesai')){
+    lockedPrizeIdx = null;
+  }
+
+  const btnSiapUndi = document.getElementById('btn-siap-undi');
+  if(btnSiapUndi) btnSiapUndi.disabled = (lockedPrizeIdx !== null) || !hadiahBiasa.length;
+
+  if(!hadiahBiasa.length){
+    el.innerHTML='<p style="color:var(--muted);text-align:center;padding:36px;font-size:1.05rem">Belum ada hadiah biasa. Buka menu Hadiah untuk menambahkan.</p>';
+    renderGrandList();
+    return;
+  }
+
+  function cardHtml(h, i, idSuffix){
+    const isDone     = h.status==='Selesai';
+    const isSelected = lockedPrizeIdx === i;
+    const isLocked   = lockedPrizeIdx !== null && !isSelected && !isDone;
+    const cardClass  = [isDone?'done':'', isSelected?'prize-card-selected':'', isLocked?'prize-card-locked':''].filter(Boolean).join(' ');
+    // Badge status — disandingkan dengan tag qty di .prize-card-meta (bukan absolute)
+    const statusBadge = isDone
+      ? '' // kalau selesai, sudah ada ribbon winner
+      : `<span class="prize-card-status"><span class="badge ${isSelected?'badge-gold':'badge-muted'}">${isSelected?'🎯 Siap Diundi':(h.status||'Belum')}</span></span>`;
+    return `
+    <div class="prize-card ${cardClass}" id="prize-card-${i}${idSuffix}" data-idx="${i}">
+      ${isDone ? '<div class="prize-card-ribbon"><span>🏆 Winner</span></div>' : ''}
+      <div class="prize-card-header">
+        <div class="prize-card-rank">Hadiah #${i+1}</div>
+        <div class="prize-card-name">${h.nama}</div>
+      </div>
+      <div class="prize-card-body">
+        ${h.deskripsi ? `<div class="prize-card-desc">${h.deskripsi}</div>` : ''}
+        <div class="prize-card-meta">
+          ${h.sponsor ? `<span class="prize-tag tag-sponsor">★ ${h.sponsor}</span>` : ''}
+          <span class="prize-tag tag-qty">${h.jumlah} pemenang</span>
+          ${statusBadge}
+        </div>
+      </div>
+      <div class="prize-card-action">
+        <button class="btn ${isDone?'btn-ghost':'btn-gold'}" onclick="mulaiUndian('${escStr(h.nama)}',${h.jumlah})" ${(isDone||isLocked)?'disabled':''}>
+          ${isDone ? '✅ Selesai' : (isSelected ? '🎯 Undi Sekarang' : 'Undi Sekarang')}
+        </button>
+      </div>
+    </div>`;
+  }
+
+  const entries = allHadiah.map((h,i)=>({h,i})).filter(x=>x.h.tipe!=='utama');
+  // Duplikasi sekali agar loop vertikal terlihat berkelanjutan (seamless).
+  // Hanya duplikasi jika ada >1 kartu, agar tidak aneh kalau cuma 1 hadiah.
+  const original = entries.map(x=>cardHtml(x.h,x.i,'')).join('');
+  const duplicate = entries.length>1 ? entries.map(x=>cardHtml(x.h,x.i,'-dup')).join('') : '';
+
+  el.innerHTML = `<div class="prize-grid" id="prize-grid">${original}${duplicate}</div>`;
+  startBoxRunning();
+  renderGrandList();
+}
+
+// ─── HADIAH UTAMA (GRAND PRIZE) — render & gating ─────────────
+function renderGrandList(){
+  const el        = document.getElementById('grand-list');
+  const lockNote  = document.getElementById('grand-lock-note');
+  const gfCount   = document.getElementById('gf-count');
+  if(!el) return;
+
+  const grandItems  = allHadiah.filter(h=>h.tipe==='utama');
+  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
+  const semuaBiasaSelesai = hadiahBiasa.length>0 && hadiahBiasa.every(h=>h.status==='Selesai');
+  const terkunci = !semuaBiasaSelesai; // terkunci jika masih ada hadiah biasa yang belum selesai (atau belum ada hadiah biasa sama sekali)
+
+  if(gfCount){
+    const selesaiUtama = grandItems.filter(h=>h.status==='Selesai').length;
+    gfCount.textContent = `${grandItems.length} hadiah${selesaiUtama?` • ${selesaiUtama} selesai`:''}`;
+  }
+
+  if(lockNote) lockNote.style.display = (grandItems.length && terkunci) ? 'flex' : 'none';
+
+  if(!grandItems.length){
+    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>';
+    return;
+  }
+
+  el.innerHTML = '<div class="grand-grid">' + allHadiah.map((h,i)=>{
+    if(h.tipe!=='utama') return '';
+    const isDone   = h.status==='Selesai';
+    const isLocked = !isDone && terkunci;
+    const cardClass = [isDone?'done':'', isLocked?'grand-locked':''].filter(Boolean).join(' ');
+    return `
+    <div class="grand-card ${cardClass}" id="grand-card-${i}">
+      <span class="grand-card-star">⭐</span>
+      ${isDone ? '<div class="grand-card-ribbon"><span>🏆 Winner</span></div>' : ''}
+      <div class="grand-card-header">
+        <div class="grand-card-rank">Hadiah Utama</div>
+        <div class="grand-card-name">${h.nama}</div>
+      </div>
+      <div class="grand-card-body">
+        ${h.deskripsi ? `<div class="grand-card-desc">${h.deskripsi}</div>` : ''}
+        <div class="grand-card-meta">
+          ${h.sponsor ? `<span class="prize-tag tag-sponsor">★ ${h.sponsor}</span>` : ''}
+          <span class="prize-tag tag-qty">${h.jumlah} pemenang</span>
+        </div>
+      </div>
+      <div class="grand-card-action">
+        <button class="btn ${isDone?'btn-ghost':'btn-gold'}" onclick="mulaiUndian('${escStr(h.nama)}',${h.jumlah})" ${(isDone||isLocked)?'disabled':''}>
+          ${isDone ? '✅ Selesai' : (isLocked ? '🔒 Terkunci' : '⭐ Undi Hadiah Utama')}
+        </button>
+        ${isLocked ? '<div class="btn-locked-note">Selesaikan semua hadiah biasa dulu</div>' : ''}
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ─── KOTAK HADIAH BERJALAN — auto-scroll VERTIKAL berkelanjutan ──
+// Track bergeser ke bawah terus-menerus tanpa putus (seamless loop),
+// menggunakan konten yang diduplikasi sekali sehingga saat scrollTop
+// mencapai setengah tinggi total, posisi direset ke 0 secara mulus
+// (karena salinan kedua identik dengan salinan pertama).
+// Berhenti sementara saat undian berlangsung, hadiah terkunci,
+// atau saat kursor hover di area kotak hadiah.
+let boxRunRAF      = null;
+let boxScrollSpeed = 0.45; // px per frame, scroll pelan
+let isHoveringPrizeTrack = false;
+let prizeHoverListenersAttached = false;
+
+function setupPrizeHoverPause(){
+  if(prizeHoverListenersAttached) return;
+  const viewport = document.getElementById('prize-track-viewport');
+  if(!viewport) return;
+  viewport.addEventListener('mouseenter', ()=>{
+    isHoveringPrizeTrack = true;
+    // Biarkan loop RAF tetap jalan — ia akan membaca flag ini dan skip scroll
+  });
+  viewport.addEventListener('mouseleave', ()=>{
+    isHoveringPrizeTrack = false;
+    // Pastikan RAF aktif kembali jika tidak ada kondisi lain yang menghentikannya
+    if(!slotRunning && lockedPrizeIdx === null){
+      startBoxRunning();
+    }
+  });
+  prizeHoverListenersAttached = true;
+}
+
+function startBoxRunning(){
+  stopBoxRunning();
+  setupPrizeHoverPause();
+  const viewport = document.getElementById('prize-track-viewport');
+  const grid     = document.getElementById('prize-grid');
+  if(!viewport || !grid || slotRunning || lockedPrizeIdx !== null) return;
+
+  const loopHeight = getLoopHeight(grid);
+  if(loopHeight <= 0) return; // tidak cukup konten untuk discroll
+
+  function step(){
+    if(slotRunning || lockedPrizeIdx !== null){
+      // Hentikan sepenuhnya — kondisi non-normal
+      boxRunRAF = null; return;
+    }
+    if(isHoveringPrizeTrack){
+      // Hover: jaga RAF tetap hidup tapi jangan scroll
+      boxRunRAF = requestAnimationFrame(step); return;
+    }
+    viewport.scrollTop += boxScrollSpeed;
+    // Loop berkelanjutan: begitu melewati satu salinan penuh, reset ke 0 tanpa jeda terlihat
+    if(viewport.scrollTop >= loopHeight){
+      viewport.scrollTop -= loopHeight;
+    }
+    boxRunRAF = requestAnimationFrame(step);
+  }
+  boxRunRAF = requestAnimationFrame(step);
+}
+// Helper: tinggi satu salinan (untuk loop). Jika ada duplikasi (genap & >1 entri),
+// ambil setengah scrollHeight; jika tidak ada duplikasi, gunakan tinggi penuh
+// dikurangi tinggi viewport (agar tetap bisa "loncat" balik halus saat mentok bawah).
+function getLoopHeight(grid){
+  const dupCount = grid.querySelectorAll('.prize-card[id$="-dup"]').length;
+  if(dupCount > 0){
+    return grid.scrollHeight / 2;
+  }
+  const viewport = document.getElementById('prize-track-viewport');
+  const max = grid.scrollHeight - (viewport ? viewport.clientHeight : 0);
+  return Math.max(0, max);
+}
+
+function stopBoxRunning(){
+  if(boxRunRAF){ cancelAnimationFrame(boxRunRAF); boxRunRAF = null; }
+}
+
+// ─── SIAP UNDI — Reel jackpot vertikal: highlight loncat antar kartu,
+// melambat, berhenti di pemenang, lalu scroll ke tengah viewport ──
+function siapUndi(){
+  const available = allHadiah
+    .map((h,i) => ({...h, idx: i}))
+    .filter(h => h.status !== 'Selesai' && h.tipe !== 'utama');
+  if(!available.length){
+    toast('Semua hadiah biasa sudah selesai diundi!','warn');
+    return;
+  }
+
+  const btn = document.getElementById('btn-siap-undi');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  stopBoxRunning();
+
+  const viewport = document.getElementById('prize-track-viewport');
+  // Hanya kartu set asli (tanpa -dup) yang dipakai sebagai "reel" jackpot,
+  // supaya highlight tidak meloncat ke salinan duplikat.
+  const cards = Array.from(viewport.querySelectorAll('.prize-card:not(.done)'))
+    .filter(c => !c.id.endsWith('-dup'));
+
+  if(!cards.length){ btn.disabled = false; return; }
+
+  // Reset posisi scroll ke atas dulu agar reel selalu mulai dari titik yang konsisten
+  viewport.scrollTop = 0;
+
+  playDrum();
+
+  let reelPos = 0;
+  let spinCount = 0;
+  const totalSpins = 18 + Math.floor(Math.random() * 10);
+
+  function highlight(idx){
+    cards.forEach(c => c.classList.remove('prize-card-selected'));
+    cards[idx].classList.add('prize-card-reeling');
+    cards[idx].style.borderColor = '#C850C0';
+    cards[idx].style.boxShadow = '0 0 24px rgba(200,80,192,.4)';
+    // Auto-scroll viewport mengikuti posisi reel agar selalu terlihat (seperti jendela jackpot)
+    const targetScroll = cards[idx].offsetTop - (viewport.clientHeight - cards[idx].offsetHeight) / 2;
+    viewport.scrollTop = Math.max(0, targetScroll);
+  }
+  function clearHighlight(idx){
+    cards[idx].classList.remove('prize-card-reeling');
+    cards[idx].style.removeProperty('border-color');
+    cards[idx].style.removeProperty('box-shadow');
+  }
+
+  function tick(){
+    clearHighlight(reelPos);
+    reelPos = (reelPos + 1) % cards.length;
+    highlight(reelPos);
+    playTick();
+    spinCount++;
+
+    if(spinCount >= totalSpins){
+      clearHighlight(reelPos);
+      // Pick final winner & kunci hadiah lain sampai hadiah ini dapat pemenang
+      const winner = available[Math.floor(Math.random() * available.length)];
+      lockedPrizeIdx = winner.idx;
+      renderUndianList();
+
+      requestAnimationFrame(()=>{
+        const winCard = document.getElementById('prize-card-' + winner.idx);
+        if(winCard && viewport){
+          const targetScroll = winCard.offsetTop - (viewport.clientHeight - winCard.offsetHeight) / 2;
+          viewport.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+        }
+      });
+      playFanfare();
+      toast(`🎯 Hadiah terpilih untuk diundi: ${winner.nama}`, 'success');
+      return;
+    }
+
+    // Kecepatan reel: cepat di awal (kesan putaran jackpot), melambat menjelang berhenti
+    const remaining = totalSpins - spinCount;
+    const delay = remaining > 6 ? 55 : 55 + (6 - remaining) * 45;
+    setTimeout(tick, delay);
+  }
+  highlight(reelPos);
+  setTimeout(tick, 55);
+}
+
+// ─── SLOT MACHINE — STOP MANUAL ──────────────────────────────
+// Alur baru:
+// 1. Minta pool teracak dari server
+// 2. Tampilkan animasi mengacak angka KK secara visual
+// 3. Latar belakang melintasi pool satu per satu
+// 4. Ketika STOP ditekan → ambil peserta yang sedang tampil
+// 5. Simpan ke server
+
+let slotTimerInterval = null;
+let slotPoolIdx       = 0;   // posisi saat ini di poolTerAcak
+let slotCurrentP      = null; // peserta yang saat ini ditampilkan
+
+async function mulaiUndian(namaHadiah, jumlah){
+  if(slotRunning) return;
+  slotRunning   = true;
+  stopRequested = false;
+  stopBoxRunning();
+
+  currentHadiahCtx = { namaHadiah, jumlah };
+
+  showLoading(true,'MENGAMBIL POOL PESERTA...');
+  const r = await gasCall('getPoolTerAcak');
+  showLoading(false);
+
+  if(!r.success){
+    slotRunning=false;
+    return toast('❌ '+r.message,'error');
+  }
+
+  poolTerAcak = r.poolTerAcak;
+  slotPoolIdx = 0;
+
+  bukaSlotManual(namaHadiah, jumlah, r.totalPool);
+}
+
+function bukaSlotManual(namaHadiah, jumlah, totalPool){
+  const ov = document.getElementById('slot-overlay');
+  document.getElementById('slot-hadiah-label').textContent = '🎁 ' + namaHadiah;
+  document.getElementById('slot-title').textContent        = '✨ PENGUNDIAN DOORPRIZE ✨';
+  document.getElementById('slot-index-label').style.display = 'none';
+  document.getElementById('slot-kk').className             = '';
+  document.getElementById('slot-kk').textContent           = '• • • •  • • • •  • • • •  • • • •';
+  document.getElementById('slot-nama').textContent         = '';
+  document.getElementById('slot-kel').textContent          = '';
+  document.getElementById('slot-sisa').textContent         = `Pool aktif: ${totalPool} peserta`;
+  document.getElementById('slot-multi-list').style.display = 'none';
+  document.getElementById('slot-actions').innerHTML        = '';
+  document.getElementById('btn-stop-manual').style.display = 'inline-flex';
+  document.getElementById('slot-stop-info').style.display  = 'block';
+  ov.classList.add('show');
+
+  playDrum();
+
+  // Mulai animasi scroll — berganti cepat lintas peserta di pool
+  let tick = 0;
+  slotTimerInterval = setInterval(()=>{
+    if(stopRequested) return; // jangan update jika sudah distop
+
+    // Laju: mulai cepat (40ms → akan dikendalikan oleh interval ini)
+    // Setiap 60 tick, pindah ke peserta berikutnya di pool
+    // (pool sudah diacak server, jadi posisi STOP menentukan siapa terpilih)
+    tick++;
+    const p = poolTerAcak[slotPoolIdx % poolTerAcak.length];
+    slotCurrentP = p;
+
+    // Tampilkan digit acak bermirroring dgn KK peserta saat ini
+    // Agar tidak terbaca sebelum distop
+    if(tick % 3 === 0){
+      // Setiap 3 tick tampilkan sedikit digit nyata, sisanya acak
+      const kk    = String(p.noKK).replace(/\D/g,'');
+      const shown = Math.floor(Math.random() * 6); // 0-5 digit terbaca
+      const fakeKK = kk.slice(0,shown)
+        + Array.from({length:16-shown},()=>Math.floor(Math.random()*10)).join('');
+      document.getElementById('slot-kk').textContent  = fakeKK.replace(/(\d{4})(?=\d)/g,'$1 ');
+      document.getElementById('slot-nama').textContent = '...';
+      document.getElementById('slot-kel').textContent  = '';
+    } else {
+      // Angka acak penuh
+      const fake = Array.from({length:16},()=>Math.floor(Math.random()*10)).join('');
+      document.getElementById('slot-kk').textContent  = fake.replace(/(\d{4})(?=\d)/g,'$1 ');
+      document.getElementById('slot-nama').textContent = '...';
+    }
+
+    playTick();
+
+    // Geser ke peserta berikutnya
+    slotPoolIdx++;
+    if(slotPoolIdx >= poolTerAcak.length) slotPoolIdx = 0; // wrap around
+  }, 80); // 80ms per frame → ≈ 12.5 peserta/detik
+}
+
+// ── TOMBOL STOP ─────────────────────────────────────────────
+async function stopManual(){
+  if(!slotRunning || stopRequested) return;
+  stopRequested = true;
+
+  // Hentikan interval
+  clearInterval(slotTimerInterval);
+  slotTimerInterval = null;
+
+  playStopSound();
+
+  // Ambil peserta yang saat ini tampil sebagai "terpilih"
+  // Jika jumlah pemenang > 1, ambil sejumlah peserta dari posisi saat ini
+  const { namaHadiah, jumlah } = currentHadiahCtx;
+  const startIdx  = ((slotPoolIdx - 1) + poolTerAcak.length) % poolTerAcak.length;
+  const dipilih   = [];
+  const seen      = new Set();
+  for(let i=0; i<poolTerAcak.length && dipilih.length<jumlah; i++){
+    const p = poolTerAcak[(startIdx + i) % poolTerAcak.length];
+    if(!seen.has(p.noKK)){ dipilih.push(p); seen.add(p.noKK); }
+  }
+
+  // Animasi reveal dramatis untuk peserta terpilih
+  document.getElementById('btn-stop-manual').style.display = 'none';
+  document.getElementById('slot-stop-info').style.display  = 'none';
+
+  if(dipilih.length === 1){
+    await animasiRevealFinal(dipilih[0], namaHadiah);
+  } else {
+    await animasiRevealMultiFinal(dipilih, namaHadiah);
+  }
+
+  // Simpan ke server
+  showLoading(true, 'MENYIMPAN HASIL...');
+  const r = await gasCall('simpanHasilStopManual', namaHadiah, dipilih);
+  showLoading(false);
+
+  if(!r.success){
+    toast('⚠️ Gagal menyimpan: '+r.message, 'error');
+  } else {
+    toast(`✅ ${r.saved} pemenang berhasil disimpan`, 'success');
+  }
+
+  // Tampilkan aksi
+  if(dipilih.length===1){
+    renderSlotActions(dipilih[0], namaHadiah);
+  } else {
+    renderSlotActionsMulti(dipilih, namaHadiah);
+  }
+}
+
+// ── ANIMASI REVEAL SETELAH STOP ─────────────────────────────
+function animasiRevealFinal(p, namaHadiah){
+  return new Promise(resolve=>{
+    const elKK   = document.getElementById('slot-kk');
+    const elNama = document.getElementById('slot-nama');
+    const elKel  = document.getElementById('slot-kel');
+    const elIdx  = document.getElementById('slot-index-label');
+    elIdx.style.display = 'block';
+
+    elIdx.textContent = '⏹ BERHENTI... mengungkap pemenang';
+
+    const kk      = String(p.noKK).replace(/\D/g,'');
+    const steps   = [0,2,4,6,8,10,12,14,16];
+    const delays  = [200,300,350,400,450,500,550,600,700];
+
+    function revealStep(i){
+      if(i >= steps.length){
+        // Final
+        elKK.textContent      = formatNoKK(p.noKK);
+        elKK.className        = 'final';
+        elNama.textContent    = p.nama || '—';
+        elKel.textContent     = p.kelurahan ? '📍 '+p.kelurahan : '';
+        elIdx.textContent     = '🏆 PEMENANG TERPILIH';
+        playFanfare();
+        resolve();
+        return;
+      }
+      setTimeout(()=>{
+        const shown   = steps[i];
+        const fakeKK  = kk.slice(0,shown) + Array.from({length:16-shown},()=>Math.floor(Math.random()*10)).join('');
+        elKK.textContent = fakeKK.replace(/(\d{4})(?=\d)/g,'$1 ');
+        playSlowTick(600+i*60);
+        revealStep(i+1);
+      }, delays[i]);
+    }
+    revealStep(0);
+  });
+}
+
+function animasiRevealMultiFinal(pemenang, namaHadiah){
+  return new Promise(async resolve=>{
+    document.getElementById('slot-index-label').textContent = `⏹ ${pemenang.length} pemenang terpilih!`;
+
+    for(let i=0; i<pemenang.length; i++){
+      document.getElementById('slot-index-label').textContent = `Mengungkap pemenang ${i+1} dari ${pemenang.length}...`;
+      await animasiRevealFinal(pemenang[i], namaHadiah);
+      if(i < pemenang.length-1) await new Promise(r=>setTimeout(r,1200));
+    }
+
+    // Tampilkan semua dalam list
+    const listEl = document.getElementById('slot-multi-list');
+    listEl.style.display = 'block';
+    listEl.innerHTML = pemenang.map((p,i)=>`
+      <div class="multi-item">
+        <span class="hadiah-num" style="width:36px;height:36px;font-size:.9rem">${i+1}</span>
+        <span class="mkk">${formatNoKK(p.noKK)}</span>
+        <span class="mnm">${p.nama||'—'}</span>
+      </div>`).join('');
+    document.getElementById('slot-kk').textContent    = `${pemenang.length} Pemenang`;
+    document.getElementById('slot-kk').className      = 'final';
+    document.getElementById('slot-nama').textContent  = '';
+    document.getElementById('slot-index-label').textContent = '🏆 SEMUA PEMENANG';
+    resolve();
+  });
+}
+
+// ── RENDER AKSI SETELAH SLOT BERHENTI ───────────────────────
+function renderSlotActions(p, namaHadiah){
+  document.getElementById('slot-actions').innerHTML=`
+    <button class="btn btn-green btn-lg" onclick="konfirmasiHadir('${p.noKK}','${escStr(namaHadiah)}')">✅ Konfirmasi Hadir</button>
+    <button class="btn btn-red btn-lg"   onclick="konfirmasiTidakHadir('${p.noKK}','${escStr(namaHadiah)}')">❌ Tidak Hadir</button>
+    <button class="btn btn-dark btn-lg"  onclick="tutupSlot()">Tutup</button>`;
+}
+function renderSlotActionsMulti(pemenang, namaHadiah){
+  const pJSON = encodeURIComponent(JSON.stringify(pemenang));
+  document.getElementById('slot-actions').innerHTML=`
+    <button class="btn btn-green btn-lg" onclick="konfirmasiSemuaHadir(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">✅ Konfirmasi Semua Hadir</button>
+    <button class="btn btn-dark btn-lg"  onclick="tutupSlot()">Tutup</button>`;
+}
+function decodeJSON(s){ return JSON.parse(decodeURIComponent(s)); }
+
+function tutupSlot(){
+  clearInterval(slotTimerInterval);
+  slotTimerInterval = null;
+  slotRunning   = false;
+  stopRequested = false;
+  document.getElementById('slot-overlay').classList.remove('show');
+  document.getElementById('btn-stop-manual').style.display = 'none';
+  document.getElementById('slot-stop-info').style.display  = 'none';
+  loadHadiah(); loadRekap();
+}
+
+// ─── KONFIRMASI PEMENANG ─────────────────────────────────────
+async function konfirmasiHadir(noKK, namaHadiah){
+  showLoading(true,'MENYIMPAN...');
+  await gasCall('konfirmasiPemenang', noKK, 'Hadir', '');
+  showLoading(false);
+  tutupSlot();
+  toast('Konfirmasi hadir disimpan ✅','success');
+}
+async function konfirmasiTidakHadir(noKK, namaHadiah){
+  if(!confirm(`Tandai peserta ini sebagai Tidak Hadir?\n\n⚠️ Peserta akan DIELIMINASI dari undian selanjutnya.\n✅ Hadiah ini bisa DIUNDI ULANG untuk peserta lain.`)) return;
+  showLoading(true,'MEMPROSES...');
+  await gasCall('batalkanPemenang', noKK, namaHadiah);
+  showLoading(false);
+  tutupSlot();
+  toast('Peserta dieliminasi — hadiah bisa diundi ulang','warn');
+}
+async function konfirmasiSemuaHadir(pemenang, namaHadiah){
+  showLoading(true,'MENYIMPAN...');
+  for(const p of pemenang) await gasCall('konfirmasiPemenang', p.noKK, 'Hadir', '');
+  showLoading(false);
+  tutupSlot();
+  toast('Semua pemenang dikonfirmasi hadir ✅','success');
+}
+
+// Shortcut keyboard
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(currentPanel) { closePanel(); return; }
+    if(!slotRunning) tutupSlot();
+  }
+  if(e.key===' ' && slotRunning && !stopRequested){
+    e.preventDefault();
+    stopManual();
+  }
+});
+
+// ─── CONFETTI ────────────────────────────────────────────────
+function buatConfetti(){
+  const box    = document.getElementById('confetti-box');
+  box.innerHTML = '';
+  const colors = ['#FFD700','#FFE55C','#00D94A','#fff','#FFA533','#6BFFAA','#00FFD4','#FFF3A3','#A7F3D0'];
+  for(let i=0;i<150;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText=`
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${2+Math.random()*2.5}s;
+      animation-delay:${Math.random()*2}s;
+      width:${8+Math.random()*12}px; height:${10+Math.random()*16}px;
+      transform:rotate(${Math.random()*360}deg);
+      border-radius:${Math.random()<.3?'50%':'2px'};`;
+    box.appendChild(el);
+  }
+  setTimeout(()=>box.innerHTML='', 7000);
+}
+
+// ─── REKAP ───────────────────────────────────────────────────
+async function loadRekap(){
+  const r = await gasCall('getRekap');
+  allRekap = r.data || [];
+  renderRekap(allRekap);
+  renderPemenangToday(allRekap);
+  refreshStats();
+}
+function renderRekap(data){
+  const container = document.getElementById('rekap-per-hadiah');
+  if(!data.length){
+    container.innerHTML='<p style="color:var(--muted);text-align:center;padding:36px;font-size:1rem">Belum ada pemenang.</p>';
+    return;
+  }
+  const byHadiah = {};
+  data.forEach(d=>{ if(!byHadiah[d.hadiah]) byHadiah[d.hadiah]=[]; byHadiah[d.hadiah].push(d); });
+  container.innerHTML = Object.entries(byHadiah).map(([hadiah,items])=>`
+    <div style="margin-bottom:24px">
+      <h3 style="color:var(--gold2);font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+        🎁 ${hadiah} <span class="badge badge-teal">${items.length} pemenang</span>
+      </h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${items.map((d,i)=>`<tr>
+              <td style="color:var(--muted)">${i+1}</td>
+              <td><code style="font-size:.88rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td>
+              <td style="font-weight:700">${d.nama||'—'}</td>
+              <td>${d.kelurahan||'—'}</td>
+              <td style="font-size:.85rem;color:var(--muted)">${d.waktu||'—'}</td>
+              <td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':d.konfirmasi==='Tidak Hadir'?'badge-red':d.konfirmasi==='Terpilih'?'badge-orange':'badge-muted'}">${d.konfirmasi||'—'}</span></td>
+              <td>
+                ${d.konfirmasi==='Terpilih'?`
+                  <button class="btn btn-green btn-sm" onclick="konfirmasiHadir('${d.noKK}','${escStr(d.hadiah)}')">✅ Hadir</button>
+                  <button class="btn btn-red btn-sm"   onclick="konfirmasiTidakHadir('${d.noKK}','${escStr(d.hadiah)}')">❌ Tidak</button>
+                ` : ''}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+function renderPemenangToday(data){
+  const tb = document.getElementById('tbody-pemenang-today');
+  if(!data.length){
+    tb.innerHTML='<tr class="empty-row"><td colspan="7">Belum ada pemenang.</td></tr>';
+    return;
+  }
+  tb.innerHTML = data.map((d,i)=>`<tr>
+    <td style="color:var(--muted);font-size:.85rem">${i+1}</td>
+    <td><span class="badge badge-gold">${d.hadiah}</span></td>
+    <td><code style="font-size:.88rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td>
+    <td style="font-weight:700">${d.nama||'—'}</td>
+    <td>${d.kelurahan||'—'}</td>
+    <td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':d.konfirmasi==='Tidak Hadir'?'badge-red':d.konfirmasi==='Terpilih'?'badge-orange':'badge-muted'}">${d.konfirmasi||'—'}</span></td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
+      ${d.konfirmasi==='Terpilih'?`<button class="btn btn-green btn-sm" onclick="konfirmasiHadir('${d.noKK}','${escStr(d.hadiah)}')">✅</button><button class="btn btn-red btn-sm" onclick="konfirmasiTidakHadir('${d.noKK}','${escStr(d.hadiah)}')">❌</button>`:'' }
+    </td>
+  </tr>`).join('');
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────
+function exportCSV(){
+  if(!allRekap.length) return toast('Belum ada data rekap','warn');
+  const header = 'No,Hadiah,No KK,Nama,Kelurahan,Waktu,Konfirmasi\n';
+  const rows   = allRekap.map((d,i)=>
+    `${i+1},"${d.hadiah}","${d.noKK}","${d.nama}","${d.kelurahan||''}","${d.waktu}","${d.konfirmasi}"`).join('\n');
+  const blob = new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'),{
+    href:url,
+    download:`rekap-doorprize-${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.csv`
+  });
+  a.click();
+  toast('File CSV berhasil didownload','success');
+}
+function printRekap(){ window.print(); }
+
+// ─── RESET ───────────────────────────────────────────────────
+async function resetPemenangKonfirmasi(){
+  if(!confirm('Reset semua data pemenang? Peserta akan kembali ke pool.')) return;
+  showLoading(true,'MERESET...');
+  await gasCall('resetPemenang');
+  showLoading(false);
+  toast('Data pemenang direset','warn');
+  loadHadiah(); loadRekap(); refreshStats();
+}
+async function resetSemuaKonfirmasi(){
+  if(!confirm('⚠️ RESET SEMUA DATA? Peserta, hadiah, dan pemenang akan terhapus!')) return;
+  if(!confirm('Tindakan ini TIDAK BISA DIBATALKAN. Lanjutkan?')) return;
+  showLoading(true,'MERESET SEMUA...');
+  await gasCall('resetSemua');
+  showLoading(false);
+  allPeserta=[]; allHadiah=[]; allRekap=[];
+  toast('Semua data direset','warn');
+  loadPeserta(); loadHadiah(); loadRekap();
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+window.onload = async () => {
   showLoading(true,'MEMUAT APLIKASI...');
-  try{await gasCall('initSheets');await refreshPublic();}catch(e){console.error('Init error:',e);}
-  showLoading(false);startPublicRefresh();
+  await gasCall('initSheets');
+  await loadSettings();
+  await loadHadiah();
+  await loadRekap();
+  await refreshStats();
+  showLoading(false);
   toast('Aplikasi siap digunakan 🌙','success');
 };
 </script>
