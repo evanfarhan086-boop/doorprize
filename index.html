@@ -872,6 +872,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 .grand-frame-title .gf-icon { font-size: 1.2em; }
 .grand-frame-title .gf-count {
+  margin-left: auto;
   font-family: 'Nunito', sans-serif;
   font-size: .78rem; font-weight: 800; letter-spacing: .03em;
   color: var(--muted); text-transform: none;
@@ -886,15 +887,17 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 #grand-list {
   flex: 1; min-height: 0;
-  overflow-y: hidden; /* discroll via JS (runningGrandText), bukan scroll manual */
+  overflow-y: auto;
   padding-right: 4px;
-  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,215,0,.3) transparent;
 }
+#grand-list::-webkit-scrollbar { width: 6px; }
+#grand-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 4px; }
 .grand-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: transform .15s linear;
 }
 .grand-card {
   background: rgba(8,20,10,.88);
@@ -965,36 +968,6 @@ tr:hover td { background: rgba(255,215,0,.05); }
   margin: 0; cursor: pointer; text-transform: none; letter-spacing: 0;
   font-size: .95rem; color: var(--gold2); font-weight: 800;
 }
-
-/* ── HADIAH UTAMA BERGERAK — toggle switch kecil di header panel ── */
-.gf-move-switch {
-  margin-left: auto; display: flex; align-items: center; gap: 8px;
-  font-family: 'Nunito', sans-serif; font-size: .74rem; font-weight: 800;
-  color: var(--muted); text-transform: none; letter-spacing: .02em;
-  cursor: pointer; user-select: none;
-}
-.gf-move-switch .gf-track {
-  position: relative; width: 36px; height: 20px; border-radius: 20px;
-  background: rgba(255,255,255,.15); border: 1px solid rgba(255,215,0,.3);
-  transition: background .25s;
-}
-.gf-move-switch .gf-thumb {
-  position: absolute; top: 1px; left: 1px; width: 16px; height: 16px;
-  border-radius: 50%; background: var(--muted);
-  transition: transform .25s, background .25s;
-}
-.gf-move-switch.active .gf-track { background: rgba(255,215,0,.35); }
-.gf-move-switch.active .gf-thumb { transform: translateX(16px); background: var(--gold); }
-
-/* ── Animasi kotak hadiah utama: lihat blok "RUNNING TEXT" di bawah ── */
-.grand-card.grand-card-zoom {
-  transform: scale(1.07);
-  box-shadow: 0 0 34px rgba(255,215,0,.55);
-  border-color: var(--gold) !important;
-  transition: transform .5s ease, box-shadow .5s ease;
-  z-index: 2;
-}
-.grand-card { transition: transform .5s ease, box-shadow .5s ease, border-color .25s; }
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
@@ -1218,9 +1191,6 @@ tr:hover td { background: rgba(255,215,0,.05); }
       <div class="grand-frame" id="grand-frame">
         <div class="grand-frame-title">
           <span class="gf-icon">⭐</span> Hadiah Utama
-          <span class="gf-move-switch active" id="gf-move-switch" onclick="toggleGrandMove()" title="Aktif/nonaktifkan Hadiah Utama bergerak">
-            <span class="gf-track"><span class="gf-thumb"></span></span> Bergerak
-          </span>
           <span class="gf-count" id="gf-count">0 hadiah</span>
         </div>
         <div id="grand-lock-note" class="grand-lock-note" style="display:none">
@@ -1370,7 +1340,6 @@ let allPeserta    = [];
 let allHadiah     = [];
 let allRekap      = [];
 let appSettings   = {};
-let grandMoveActive = true; // default ON — fitur Hadiah Utama bergerak
 
 // State slot machine
 let slotRunning   = false;
@@ -1486,7 +1455,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxarWvpepxPE7-bno1RzuTb67DtZG5iYGp5F_cg0rJ0duTyHL79cQR4UsCtxApfMC9a/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvuQxTLbqswFya-UtK7AI7_6Y4N2Dxzw8Z-5WeJFKEFKrxEHKHC-w1S6pe-_SZhMMD/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -1853,21 +1822,37 @@ function renderUndianList(){
   renderGrandList();
 }
 
-// ─── HADIAH UTAMA BERGERAK — toggle ON/OFF (quick toggle, tidak disimpan ke Sheet) ──
-function toggleGrandMove(){
-  grandMoveActive = !grandMoveActive;
-  const sw = document.getElementById('gf-move-switch');
-  if(sw) sw.classList.toggle('active', grandMoveActive);
-  if(grandMoveActive) startGrandRunning(); else stopGrandRunning();
-}
-
 // ─── HADIAH UTAMA (GRAND PRIZE) — render & gating ─────────────
-function buildGrandCardHTML(h, i, terkunci, idSuffix){
-  const isDone   = h.status==='Selesai';
-  const isLocked = !isDone && terkunci;
-  const cardClass = [isDone?'done':'', isLocked?'grand-locked':''].filter(Boolean).join(' ');
-  return `
-    <div class="grand-card ${cardClass}" id="grand-card-${i}${idSuffix}">
+function renderGrandList(){
+  const el        = document.getElementById('grand-list');
+  const lockNote  = document.getElementById('grand-lock-note');
+  const gfCount   = document.getElementById('gf-count');
+  if(!el) return;
+
+  const grandItems  = allHadiah.filter(h=>h.tipe==='utama');
+  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
+  const semuaBiasaSelesai = hadiahBiasa.length>0 && hadiahBiasa.every(h=>h.status==='Selesai');
+  const terkunci = !semuaBiasaSelesai; // terkunci jika masih ada hadiah biasa yang belum selesai (atau belum ada hadiah biasa sama sekali)
+
+  if(gfCount){
+    const selesaiUtama = grandItems.filter(h=>h.status==='Selesai').length;
+    gfCount.textContent = `${grandItems.length} hadiah${selesaiUtama?` • ${selesaiUtama} selesai`:''}`;
+  }
+
+  if(lockNote) lockNote.style.display = (grandItems.length && terkunci) ? 'flex' : 'none';
+
+  if(!grandItems.length){
+    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>';
+    return;
+  }
+
+  el.innerHTML = '<div class="grand-grid">' + allHadiah.map((h,i)=>{
+    if(h.tipe!=='utama') return '';
+    const isDone   = h.status==='Selesai';
+    const isLocked = !isDone && terkunci;
+    const cardClass = [isDone?'done':'', isLocked?'grand-locked':''].filter(Boolean).join(' ');
+    return `
+    <div class="grand-card ${cardClass}" id="grand-card-${i}">
       <span class="grand-card-star">⭐</span>
       ${isDone ? '<div class="grand-card-ribbon"><span>🏆 Winner</span></div>' : ''}
       <div class="grand-card-header">
@@ -1888,137 +1873,7 @@ function buildGrandCardHTML(h, i, terkunci, idSuffix){
         ${isLocked ? '<div class="btn-locked-note">Selesaikan semua hadiah biasa dulu</div>' : ''}
       </div>
     </div>`;
-}
-function renderGrandList(){
-  const el        = document.getElementById('grand-list');
-  const lockNote  = document.getElementById('grand-lock-note');
-  const gfCount   = document.getElementById('gf-count');
-  if(!el) return;
-
-  const grandItems  = allHadiah.filter(h=>h.tipe==='utama');
-  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
-  const semuaBiasaSelesai = hadiahBiasa.length>0 && hadiahBiasa.every(h=>h.status==='Selesai');
-  const terkunci = !semuaBiasaSelesai; // terkunci jika masih ada hadiah biasa yang belum selesai (atau belum ada hadiah biasa sama sekali)
-
-  if(gfCount){
-    const selesaiUtama = grandItems.filter(h=>h.status==='Selesai').length;
-    gfCount.textContent = `${grandItems.length} hadiah${selesaiUtama?` • ${selesaiUtama} selesai`:''}`;
-  }
-
-  if(lockNote) lockNote.style.display = (grandItems.length && terkunci) ? 'flex' : 'none';
-  stopGrandRunning();
-
-  if(!grandItems.length){
-    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>';
-    return;
-  }
-
-  const original = allHadiah.map((h,i)=> h.tipe==='utama' ? buildGrandCardHTML(h,i,terkunci,'') : '').join('');
-  // Duplikasi hanya berguna untuk loop seamless bila ada >1 kartu berjalan;
-  // tetap diduplikasi walau 1 kartu agar transisi scroll tetap mulus.
-  const duplicate = allHadiah.map((h,i)=> h.tipe==='utama' ? buildGrandCardHTML(h,i,terkunci,'-dup') : '').join('');
-  el.innerHTML = `<div class="grand-grid" id="grand-grid">${original}${duplicate}</div>`;
-
-  if(grandMoveActive) startGrandRunning();
-}
-
-// ─── HADIAH UTAMA BERJALAN — running text vertikal + pause & zoom ──
-// Mekanisme: grid bergeser ke atas terus-menerus (loop seamless, sama
-// prinsip dengan startBoxRunning di hadiah biasa). Tiap frame dicek kartu
-// mana yang pusatnya paling dekat ke pusat viewport — saat sebuah kartu
-// "pas" di tengah, scroll dihentikan sejenak sambil kartu di-zoom (class
-// grand-card-zoom), lalu lanjut berjalan lagi. Berhenti total saat undian
-// berlangsung atau saat di-hover.
-let grandRunRAF        = null;
-let grandScrollSpeed   = 0.4;     // px/frame saat berjalan
-let grandPauseUntil    = 0;       // timestamp ms — selama ini scroll tidak bergerak (efek pause)
-let grandPauseMs       = 1500;    // lama berhenti+zoom tiap kartu pas di tengah
-let grandLastZoomCard  = null;
-let isHoveringGrandList = false;
-let grandHoverListenerAttached = false;
-
-function setupGrandHoverPause(){
-  if(grandHoverListenerAttached) return;
-  const viewport = document.getElementById('grand-list');
-  if(!viewport) return;
-  viewport.addEventListener('mouseenter', ()=>{ isHoveringGrandList = true; });
-  viewport.addEventListener('mouseleave', ()=>{
-    isHoveringGrandList = false;
-    if(!slotRunning && grandMoveActive) startGrandRunning();
-  });
-  grandHoverListenerAttached = true;
-}
-
-function startGrandRunning(){
-  stopGrandRunning();
-  if(!grandMoveActive || slotRunning) return;
-  setupGrandHoverPause();
-  const viewport = document.getElementById('grand-list');
-  const grid     = document.getElementById('grand-grid');
-  if(!viewport || !grid) return;
-
-  const loopHeight = getGrandLoopHeight(grid);
-  if(loopHeight <= 0) return; // konten tidak cukup tinggi untuk berjalan
-
-  function step(){
-    if(slotRunning){ grandRunRAF = null; return; }
-    if(isHoveringGrandList){ grandRunRAF = requestAnimationFrame(step); return; }
-
-    const now = performance.now();
-    checkGrandCenterCard(viewport, grid, now);
-
-    if(now < grandPauseUntil){
-      // Sedang berhenti sejenak (kartu di tengah sedang di-zoom)
-      grandRunRAF = requestAnimationFrame(step); return;
-    }
-
-    viewport.scrollTop += grandScrollSpeed;
-    if(viewport.scrollTop >= loopHeight){
-      viewport.scrollTop -= loopHeight;
-    }
-    grandRunRAF = requestAnimationFrame(step);
-  }
-  grandRunRAF = requestAnimationFrame(step);
-}
-
-// Cek kartu mana yang pusatnya paling dekat ke pusat viewport.
-// Jika ada kartu baru yang "pas" di tengah (toleransi ±half-card),
-// hentikan scroll sejenak + beri class zoom.
-function checkGrandCenterCard(viewport, grid, now){
-  if(now < grandPauseUntil) return; // masih dalam fase pause kartu sebelumnya
-  const vpRect = viewport.getBoundingClientRect();
-  const vpCenter = vpRect.top + vpRect.height/2;
-  const cards = Array.from(grid.querySelectorAll('.grand-card:not(.grand-locked):not(.done)'));
-  let closest = null, closestDist = Infinity;
-  cards.forEach(c=>{
-    const r = c.getBoundingClientRect();
-    const cCenter = r.top + r.height/2;
-    const dist = Math.abs(cCenter - vpCenter);
-    if(dist < closestDist){ closestDist = dist; closest = c; }
-  });
-  if(!closest) return;
-  const tolerance = closest.getBoundingClientRect().height * 0.18;
-  if(closestDist <= tolerance && closest !== grandLastZoomCard){
-    cards.forEach(c=>c.classList.remove('grand-card-zoom'));
-    closest.classList.add('grand-card-zoom');
-    grandLastZoomCard = closest;
-    grandPauseUntil = now + grandPauseMs;
-    setTimeout(()=>{ closest.classList.remove('grand-card-zoom'); }, grandPauseMs);
-  }
-}
-
-function getGrandLoopHeight(grid){
-  const dupCount = grid.querySelectorAll('.grand-card[id$="-dup"]').length;
-  if(dupCount > 0) return grid.scrollHeight / 2;
-  return 0;
-}
-
-function stopGrandRunning(){
-  if(grandRunRAF){ cancelAnimationFrame(grandRunRAF); grandRunRAF = null; }
-  grandPauseUntil   = 0;
-  grandLastZoomCard = null;
-  const grid = document.getElementById('grand-grid');
-  if(grid) grid.querySelectorAll('.grand-card-zoom').forEach(c=>c.classList.remove('grand-card-zoom'));
+  }).join('') + '</div>';
 }
 
 // ─── KOTAK HADIAH BERJALAN — auto-scroll VERTIKAL berkelanjutan ──
@@ -2196,7 +2051,6 @@ async function mulaiUndian(namaHadiah, jumlah){
   slotRunning   = true;
   stopRequested = false;
   stopBoxRunning();
-  stopGrandRunning();
 
   currentHadiahCtx = { namaHadiah, jumlah };
 
