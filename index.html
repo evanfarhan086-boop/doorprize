@@ -872,7 +872,6 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 .grand-frame-title .gf-icon { font-size: 1.2em; }
 .grand-frame-title .gf-count {
-  margin-left: auto;
   font-family: 'Nunito', sans-serif;
   font-size: .78rem; font-weight: 800; letter-spacing: .03em;
   color: var(--muted); text-transform: none;
@@ -968,6 +967,43 @@ tr:hover td { background: rgba(255,215,0,.05); }
   margin: 0; cursor: pointer; text-transform: none; letter-spacing: 0;
   font-size: .95rem; color: var(--gold2); font-weight: 800;
 }
+
+/* ── HADIAH UTAMA BERGERAK — toggle switch kecil di header panel ── */
+.gf-move-switch {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font-family: 'Nunito', sans-serif; font-size: .74rem; font-weight: 800;
+  color: var(--muted); text-transform: none; letter-spacing: .02em;
+  cursor: pointer; user-select: none;
+}
+.gf-move-switch .gf-track {
+  position: relative; width: 36px; height: 20px; border-radius: 20px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,215,0,.3);
+  transition: background .25s;
+}
+.gf-move-switch .gf-thumb {
+  position: absolute; top: 1px; left: 1px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--muted);
+  transition: transform .25s, background .25s;
+}
+.gf-move-switch.active .gf-track { background: rgba(255,215,0,.35); }
+.gf-move-switch.active .gf-thumb { transform: translateX(16px); background: var(--gold); }
+
+/* ── Animasi kotak hadiah utama bergerak vertikal + zoom berhenti sejenak ──
+   Loop: turun pelan → berhenti sejenak (zoom in + glow) → lanjut turun → ulang.
+   Tidak diterapkan pada kartu yang locked / sudah selesai. */
+@keyframes grandMove {
+  0%   { transform: translateY(0)    scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+  38%  { transform: translateY(10px) scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+  46%  { transform: translateY(10px) scale(1.07); box-shadow: 0 0 34px rgba(255,215,0,.55); }
+  62%  { transform: translateY(10px) scale(1.07); box-shadow: 0 0 34px rgba(255,215,0,.55); }
+  70%  { transform: translateY(10px) scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+  100% { transform: translateY(0)    scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+}
+.grand-card.grand-card-anim {
+  animation: grandMove 4.2s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+.grand-card.grand-card-anim:hover { animation-play-state: paused; }
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
@@ -1191,6 +1227,9 @@ tr:hover td { background: rgba(255,215,0,.05); }
       <div class="grand-frame" id="grand-frame">
         <div class="grand-frame-title">
           <span class="gf-icon">⭐</span> Hadiah Utama
+          <span class="gf-move-switch active" id="gf-move-switch" onclick="toggleGrandMove()" title="Aktif/nonaktifkan Hadiah Utama bergerak">
+            <span class="gf-track"><span class="gf-thumb"></span></span> Bergerak
+          </span>
           <span class="gf-count" id="gf-count">0 hadiah</span>
         </div>
         <div id="grand-lock-note" class="grand-lock-note" style="display:none">
@@ -1340,6 +1379,7 @@ let allPeserta    = [];
 let allHadiah     = [];
 let allRekap      = [];
 let appSettings   = {};
+let grandMoveActive = true; // default ON — fitur Hadiah Utama bergerak
 
 // State slot machine
 let slotRunning   = false;
@@ -1347,6 +1387,23 @@ let stopRequested = false;   // ← flag tombol STOP ditekan
 let poolTerAcak   = [];      // Pool yang sudah diacak server (untuk stop manual)
 let currentHadiahCtx = null; // { namaHadiah, jumlah }
 let audioCtx      = null;
+
+// ─── UTILITAS PENGACAKAN CLIENT-SIDE ─────────────────────────
+function cryptoRandom() {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] / 4294967296;
+}
+
+function clientSideShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(cryptoRandom() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 
 // ─── STARFIELD CANVAS ────────────────────────────────────────
 (function(){
@@ -1438,7 +1495,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxarWvpepxPE7-bno1RzuTb67DtZG5iYGp5F_cg0rJ0duTyHL79cQR4UsCtxApfMC9a/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvuQxTLbqswFya-UtK7AI7_6Y4N2Dxzw8Z-5WeJFKEFKrxEHKHC-w1S6pe-_SZhMMD/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -1805,6 +1862,14 @@ function renderUndianList(){
   renderGrandList();
 }
 
+// ─── HADIAH UTAMA BERGERAK — toggle ON/OFF (quick toggle, tidak disimpan ke Sheet) ──
+function toggleGrandMove(){
+  grandMoveActive = !grandMoveActive;
+  const sw = document.getElementById('gf-move-switch');
+  if(sw) sw.classList.toggle('active', grandMoveActive);
+  renderGrandList(); // re-render supaya class animasi ikut diperbarui
+}
+
 // ─── HADIAH UTAMA (GRAND PRIZE) — render & gating ─────────────
 function renderGrandList(){
   const el        = document.getElementById('grand-list');
@@ -1833,7 +1898,9 @@ function renderGrandList(){
     if(h.tipe!=='utama') return '';
     const isDone   = h.status==='Selesai';
     const isLocked = !isDone && terkunci;
-    const cardClass = [isDone?'done':'', isLocked?'grand-locked':''].filter(Boolean).join(' ');
+    // Animasi bergerak hanya untuk kartu yang belum selesai & belum terkunci, dan toggle aktif
+    const isAnim   = grandMoveActive && !isDone && !isLocked;
+    const cardClass = [isDone?'done':'', isLocked?'grand-locked':'', isAnim?'grand-card-anim':''].filter(Boolean).join(' ');
     return `
     <div class="grand-card ${cardClass}" id="grand-card-${i}">
       <span class="grand-card-star">⭐</span>
@@ -2046,8 +2113,27 @@ async function mulaiUndian(namaHadiah, jumlah){
     return toast('❌ '+r.message,'error');
   }
 
-  poolTerAcak = r.poolTerAcak;
-  slotPoolIdx = 0;
+  // Lapisan client-side: micro-shuffle menggunakan crypto.getRandomValues()
+  // untuk memastikan bahwa urutan server tidak bisa diprediksi siapapun
+  poolTerAcak = clientSideShuffle(r.poolTerAcak);
+
+  // KEADILAN: mulai dari posisi acak menggunakan crypto.getRandomValues()
+  // sehingga peserta di indeks 0 tidak lebih sering muncul di awal animasi
+  const cryptoBuf = new Uint32Array(1);
+  crypto.getRandomValues(cryptoBuf);
+  slotPoolIdx = cryptoBuf[0] % poolTerAcak.length;
+
+  // Tampilkan kode audit sesi (untuk transparansi panitia)
+  if(r.sessionSeed){
+    const oldBadge = document.getElementById('slot-session-seed');
+    if(oldBadge) oldBadge.remove();
+    const badge = document.createElement('div');
+    badge.id = 'slot-session-seed';
+    badge.style.cssText = 'position:fixed;top:14px;right:60px;z-index:9999;background:rgba(10,26,13,.92);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:4px 12px;font-family:monospace;font-size:.75rem;color:#D4AF37;letter-spacing:.08em;';
+    badge.textContent = '\uD83D\uDD10 Sesi: ' + r.sessionSeed;
+    document.body.appendChild(badge);
+    setTimeout(()=>{ if(badge.parentNode) badge.remove(); }, 60000);
+  }
 
   bukaSlotManual(namaHadiah, jumlah, r.totalPool);
 }
