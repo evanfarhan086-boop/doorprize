@@ -39,6 +39,8 @@
   --viewport-3:   calc(3 * var(--prize-card-h) + 2 * var(--prize-gap));
   /* Total frame height = title + viewport + padding bawah */
   --panel-h:      calc(var(--prize-title-h) + var(--viewport-3) + var(--prize-pad-bot));
+  /* Viewport grand-only: diset JS setelah render kartu pertama */
+  --grand-card-viewport: 280px; /* fallback default */
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -1060,32 +1062,24 @@ tr:hover td { background: rgba(255,215,0,.05); }
 /* Grand frame diperbesar saat grand-only */
 .dual-prize-grid.grand-only-mode .grand-frame {
   height: auto !important;       /* override height: var(--panel-h) dari base rule */
-  min-height: 70vh;              /* ambil 70% tinggi layar — jauh lebih besar */
+  /* Tinggi cukup untuk 1 kartu grand + title + padding — tidak overflow halaman */
+  min-height: 0;
   border-width: 2px;
   box-shadow: 0 0 80px rgba(255,215,0,.18), 0 12px 48px rgba(0,0,0,.5),
               inset 0 1px 0 rgba(255,255,255,.07);
 }
 .dual-prize-grid.grand-only-mode .grand-frame-title {
-  font-size: clamp(1.2rem, 3vw, 1.9rem);
-  padding-bottom: 18px;
-  margin-bottom: 20px;
+  font-size: clamp(1.1rem, 2.6vw, 1.6rem);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
   border-bottom: 1px solid rgba(255,215,0,.2);
 }
+/* Kartu ukuran asli — panel melebar ke tengah, bukan memanjang ke bawah */
 .dual-prize-grid.grand-only-mode .grand-card-name {
-  font-size: clamp(1.3rem, 3vw, 1.8rem);
-}
-.dual-prize-grid.grand-only-mode .grand-card-header {
-  padding: 28px 22px 16px;
-}
-.dual-prize-grid.grand-only-mode .grand-card-body {
-  padding: 16px 22px 16px;
-}
-.dual-prize-grid.grand-only-mode .grand-card-action {
-  padding: 0 22px 22px;
+  font-size: clamp(1.2rem, 2.8vw, 1.6rem);
 }
 .dual-prize-grid.grand-only-mode .grand-card-action .btn {
-  padding: 16px 20px;
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 /* Tombol "Lihat Hadiah Biasa" — muncul saat grand-only */
@@ -1124,8 +1118,15 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 /* Pastikan #grand-list mengisi sisa tinggi panel yang kini jauh lebih besar */
 .dual-prize-grid.grand-only-mode #grand-list {
-  flex: 1;
+  flex: none;                  /* jangan stretch — pakai height eksplisit */
+  height: var(--grand-card-viewport); /* tinggi persis 1 kartu grand */
   min-height: 0;
+  overflow-y: hidden;          /* scroll dikendalikan marquee, bukan native */
+}
+/* Tinggi viewport 1 kartu grand — dihitung dari kartu yang ada.
+   Jika tidak ada marquee, tetap bisa scroll manual */
+.dual-prize-grid.grand-only-mode #grand-list:not(.marquee-mode) {
+  overflow-y: auto;
 }
 
 /* ═══════════════════════════════════════════
@@ -1619,7 +1620,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvC4W0diHXzuEV9b82D3cmmOr905EPeq-7NHmfQ4TvHFtWY1CQ6C9tLUIxt9rzrlba/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXiTOaJXcCJmoEpMuyIljGL7jV-wlMUlMEl0_flC6G1VGgKKVQZfL8MeFvac6C0QAv/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2296,8 +2297,15 @@ function applyGrandOnlyMode(aktif){
       grid.classList.add('grand-only-mode');
       if(btnShow) btnShow.classList.add('visible');
 
-      // Paksa reattach marquee setelah ukuran panel berubah
-      setTimeout(()=>reattachGrandMarquee(), 600);
+      // Ukur tinggi kartu SETELAH class grand-only-mode diterapkan
+      // dan browser selesai me-layout ulang (requestAnimationFrame ke-2)
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          setGrandCardViewportHeight();
+          // Reattach marquee setelah viewport height diset
+          setTimeout(()=>reattachGrandMarquee(), 200);
+        });
+      });
     }, 300);
 
   } else if(!aktif && grandOnlyActive){
@@ -2306,6 +2314,22 @@ function applyGrandOnlyMode(aktif){
     if(btnShow) btnShow.classList.remove('visible');
     setTimeout(()=>reattachGrandMarquee(), 400);
   }
+}
+
+// Ukur tinggi 1 kartu grand lalu set CSS variable --grand-card-viewport
+// sehingga panel grand-only persis muat 1 kartu + sedikit padding
+function setGrandCardViewportHeight(){
+  const firstCard = document.querySelector('#grand-list .grand-card');
+  if(!firstCard) return;
+  const cardH = firstCard.offsetHeight;
+  const gap   = 16; // sama dengan .grand-grid gap
+  // Viewport = 1 kartu + setengah kartu berikutnya (hint ada lebih)
+  // atau cukup 1 kartu + gap kecil jika hanya 1 hadiah utama
+  const grandItems = allHadiah.filter(h=>h.tipe==='utama');
+  const viewportH  = grandItems.length > 1
+    ? cardH + gap + Math.round(cardH * 0.18) // tampilkan sedikit kartu berikutnya
+    : cardH + 8;
+  document.documentElement.style.setProperty('--grand-card-viewport', viewportH + 'px');
 }
 
 // Tombol "Lihat Hadiah Biasa" — buka panel Rekap yang sudah berisi semua pemenang
