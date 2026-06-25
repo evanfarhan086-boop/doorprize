@@ -1072,7 +1072,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   max-width: 780px;
   margin-left: auto;
   margin-right: auto;
-  overflow: visible; /* izinkan pop-out kartu keluar dari grid */
+  /* overflow default: kartu tidak tampil di luar grid */
 }
 .dual-prize-grid.grand-only-mode .prize-frame {
   display: none;
@@ -1085,15 +1085,16 @@ tr:hover td { background: rgba(255,215,0,.05); }
   border-width: 2px;
   box-shadow: 0 0 80px rgba(255,215,0,.18), 0 12px 48px rgba(0,0,0,.5),
               inset 0 1px 0 rgba(255,255,255,.07);
-  /* Izinkan kartu keluar dari batas panel saat zoom spotlight */
+  overflow: hidden; /* default: kartu terpotong rapi di dalam panel */
+}
+/* Saat pop-out aktif (ditambahkan JS sesaat): buka overflow */
+.dual-prize-grid.grand-only-mode .grand-frame.popout-active {
   overflow: visible;
 }
-/* grand-list juga harus visible agar kartu bisa pop-out */
-.dual-prize-grid.grand-only-mode #grand-list,
-.dual-prize-grid.grand-only-mode #grand-list.marquee-mode {
+.dual-prize-grid.grand-only-mode .grand-frame.popout-active #grand-list {
   overflow: visible !important;
 }
-/* grand-marquee-track perlu z-index agar kartu spotlight tampil di atas segalanya */
+/* grand-marquee-track: stacking context untuk z-index kartu */
 .dual-prize-grid.grand-only-mode .grand-marquee-track {
   position: relative;
   z-index: 0;
@@ -1654,7 +1655,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7ZHaLzcpWV4_g6WZJ31r6_HSKUdmEyvIBoVqG4w_M41r35rg7q7uuyxnubYm8NZHY/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwWM81Qp_5AnhbEoNWx0MFvbk0yyrxJf9nM7Kbno2V5uRuPatwYzytnq-XOohMJLrE9/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2261,21 +2262,17 @@ function zoomSpotlight(card){
   // Hapus spotlight sebelumnya
   document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>{
     c.classList.remove('marquee-spotlight');
-    c.style.zIndex = '';
   });
 
   grandMarqueePaused = true;
 
-  // Pop-out hanya aktif saat grand-only mode (panel di tengah)
-  // Pada mode normal (2 kolom), kartu tidak pop-out karena ruang terbatas
-  if(grandOnlyActive){
-    // Pastikan semua ancestor tidak memotong overflow kartu
-    const track = card.closest('.grand-marquee-track');
-    const list  = card.closest('#grand-list');
-    const frame = card.closest('.grand-frame');
-    if(track) track.style.zIndex = '9989';
-    if(list)  { list.style.overflow  = 'visible'; list.style.zIndex = '9989'; }
-    if(frame) { frame.style.overflow = 'visible'; }
+  const frame = card.closest('.grand-frame');
+
+  // Pop-out: buka overflow HANYA saat animasi berlangsung
+  // Caranya: tambah class .popout-active ke frame sesaat sebelum animasi,
+  // hapus kembali setelah animasi selesai → kartu normal tetap di dalam panel
+  if(grandOnlyActive && frame){
+    frame.classList.add('popout-active');
   }
 
   card.classList.add('marquee-spotlight');
@@ -2283,16 +2280,8 @@ function zoomSpotlight(card){
   clearTimeout(grandMarqueeSpotlightTimer);
   grandMarqueeSpotlightTimer = setTimeout(()=>{
     card.classList.remove('marquee-spotlight');
-    card.style.zIndex = '';
-
-    // Kembalikan overflow setelah animasi selesai
-    if(grandOnlyActive){
-      const track = card.closest('.grand-marquee-track');
-      const list  = card.closest('#grand-list');
-      if(track) track.style.zIndex = '';
-      if(list)  { list.style.overflow = ''; list.style.zIndex = ''; }
-    }
-
+    // Tutup kembali overflow setelah freeze selesai
+    if(frame) frame.classList.remove('popout-active');
     grandMarqueePaused = false;
   }, 1100);
 }
