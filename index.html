@@ -1694,7 +1694,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzh9sg6R-6h0NUyL13T2POI587QndbUFBxFSGaocaBluSa_nKd4hpJPqxiehzz0fslf/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzy-CDr_dH9fUhK8i-K_8bB-urcY3-LosHk0buqVd7v5CxzzoU6E0vtzh0Ya5GQoBnX/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2484,50 +2484,64 @@ function setupPrizeHoverPause(){
 
 // ═══════════════════════════════════════════════════════════════
 // PRIZE PANEL MARQUEE — Vertikal scroll + pop-out clone saat spotlight
-// Mirip dengan grand marquee, tapi pakai scrollTop pada prize-track-viewport
-// (karena prize panel sudah punya viewport + scrollable grid)
+// Mengambil alih startBoxRunning saat aktif (keduanya pakai scrollTop
+// pada prize-track-viewport — tidak boleh jalan bersamaan).
 // ═══════════════════════════════════════════════════════════════
 
 let prizeMarqueeEnabled   = false;
 let prizeMarqueeRAF       = null;
 let prizeMarqueePaused    = false;
-let prizeMarqueeSpeed     = 0.55;
+let prizeMarqueeSpeed     = 0.55;  // px per frame — sama dengan boxScrollSpeed
 let prizeMarqueeTimer     = null;
 let lastPrizeSpotlight    = null;
 let _prizePopoutClone     = null;
 
+// Tinggi 1 kartu + gap, dihitung saat marquee mulai
+let prizeCardStepH        = 0;
+// Akumulator posisi scroll (float) agar kecepatan sub-pixel akurat
+let prizeScrollAcc        = 0;
+
 function togglePrizeMarquee(){
   prizeMarqueeEnabled = !prizeMarqueeEnabled;
-  const btn      = document.getElementById('btn-prize-marquee');
-  const viewport = document.getElementById('prize-track-viewport');
+  const btn = document.getElementById('btn-prize-marquee');
   if(!btn) return;
 
   if(prizeMarqueeEnabled){
     btn.textContent = '⏸ Animasi';
     btn.classList.add('active');
+    // Hentikan startBoxRunning — marquee mengambil alih
+    stopBoxRunning();
     startPrizeMarquee();
   } else {
     btn.textContent = '▶ Animasi';
     btn.classList.remove('active');
     stopPrizeMarquee();
+    // Kembalikan kontrol ke startBoxRunning
+    startBoxRunning();
   }
 }
 
 function startPrizeMarquee(){
   stopPrizeMarquee();
   if(!prizeMarqueeEnabled) return;
-  if(slotRunning || lockedPrizeIdx !== null) return; // jangan jalan saat undian aktif
+  if(slotRunning || lockedPrizeIdx !== null) return;
 
   const viewport = document.getElementById('prize-track-viewport');
   const grid     = document.getElementById('prize-grid');
   if(!viewport || !grid) return;
 
-  // Gunakan loopHeight yang sudah ada (seamless loop dari duplikasi kartu)
   const loopHeight = getLoopHeight(grid);
   if(loopHeight <= 0) return;
 
+  // Hitung tinggi 1 langkah kartu (card + gap) untuk deteksi spotlight
+  const firstCard = grid.querySelector('.prize-card');
+  const cardH     = firstCard ? firstCard.offsetHeight : 112;
+  const gapH      = 18; // --prize-gap
+  prizeCardStepH  = cardH + gapH;
+
   prizeMarqueePaused = false;
   lastPrizeSpotlight = null;
+  prizeScrollAcc     = viewport.scrollTop; // mulai dari posisi saat ini
 
   function step(){
     if(!prizeMarqueeEnabled){ prizeMarqueeRAF = null; return; }
@@ -2535,13 +2549,15 @@ function startPrizeMarquee(){
       prizeMarqueeRAF = requestAnimationFrame(step); return;
     }
 
-    viewport.scrollTop += prizeMarqueeSpeed;
-    if(viewport.scrollTop >= loopHeight){
-      viewport.scrollTop -= loopHeight;
-    }
+    prizeScrollAcc += prizeMarqueeSpeed;
+    // Seamless loop
+    if(prizeScrollAcc >= loopHeight) prizeScrollAcc -= loopHeight;
+    viewport.scrollTop = prizeScrollAcc;
 
-    // Cek kartu yang paling dekat ke tengah viewport
-    checkPrizeSpotlight(viewport);
+    // Deteksi spotlight: cek apakah posisi scroll tepat di batas kartu
+    // (kartu melewati tengah viewport) — pakai scrollTop, bukan getBoundingClientRect
+    // agar tidak terpengaruh perubahan posisi window
+    checkPrizeSpotlightByScroll(viewport, loopHeight);
 
     prizeMarqueeRAF = requestAnimationFrame(step);
   }
@@ -2556,25 +2572,31 @@ function stopPrizeMarquee(){
   cleanupPrizePopout();
 }
 
-function checkPrizeSpotlight(viewport){
-  const cards = Array.from(viewport.querySelectorAll('.prize-card:not(.done):not([id$="-dup"])'));
-  if(!cards.length) return;
+// Deteksi berbasis scrollTop — lebih stabil dari getBoundingClientRect
+// Tengah viewport = scrollTop + viewportH/2
+// Kartu ke-N ada di posisi N * prizeCardStepH dari atas grid
+function checkPrizeSpotlightByScroll(viewport, loopHeight){
+  if(!prizeCardStepH) return;
+  const viewportH  = viewport.clientHeight;
+  const scrollMid  = (viewport.scrollTop + viewportH / 2) % loopHeight;
+  // Indeks kartu yang saat ini berada di tengah viewport
+  const cardIdx    = Math.floor(scrollMid / prizeCardStepH);
+  // Seberapa dekat tengah viewport dengan tengah kartu ini
+  const cardMidPos = cardIdx * prizeCardStepH + prizeCardStepH / 2;
+  const dist       = Math.abs(scrollMid - cardMidPos);
+  // Threshold: ½ kecepatan scroll per frame — sangat presisi
+  if(dist > prizeMarqueeSpeed * 2.5) return;
 
-  const center  = viewport.getBoundingClientRect().top + viewport.clientHeight / 2;
-  let closest   = null;
-  let minDist   = Infinity;
+  // Ambil kartu asli (bukan duplikat) berdasarkan index
+  const grid     = document.getElementById('prize-grid');
+  const origCards = Array.from(grid.querySelectorAll('.prize-card:not(.done):not([id$="-dup"])'));
+  if(!origCards.length) return;
 
-  cards.forEach(card => {
-    const rect = card.getBoundingClientRect();
-    const cardCenter = rect.top + rect.height / 2;
-    const dist = Math.abs(cardCenter - center);
-    if(dist < minDist){ minDist = dist; closest = card; }
-  });
+  const targetCard = origCards[cardIdx % origCards.length];
+  if(!targetCard || targetCard === lastPrizeSpotlight) return;
 
-  if(closest && closest !== lastPrizeSpotlight && minDist < 16){
-    lastPrizeSpotlight = closest;
-    prizePanelPopout(closest);
-  }
+  lastPrizeSpotlight = targetCard;
+  prizePanelPopout(targetCard);
 }
 
 function prizePanelPopout(card, extraClass){
