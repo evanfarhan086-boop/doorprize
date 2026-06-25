@@ -971,7 +971,8 @@ tr:hover td { background: rgba(255,215,0,.05); }
    GRAND PRIZE — Vertical Marquee Scroll + Zoom
 ═══════════════════════════════════════════ */
 /* Toggle button — inline di grand-frame-title */
-.btn-grand-marquee-toggle {
+/* Shared style untuk tombol toggle marquee (hadiah utama & hadiah biasa) */
+.btn-marquee-toggle {
   background: rgba(255,215,0,.1);
   border: 1px solid rgba(255,215,0,.3);
   color: var(--gold2);
@@ -984,12 +985,12 @@ tr:hover td { background: rgba(255,215,0,.05); }
   white-space: nowrap; flex-shrink: 0;
   letter-spacing: .03em;
 }
-.btn-grand-marquee-toggle:hover {
+.btn-marquee-toggle:hover {
   background: rgba(255,215,0,.2);
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(255,215,0,.25);
 }
-.btn-grand-marquee-toggle.active {
+.btn-marquee-toggle.active {
   background: linear-gradient(135deg, rgba(255,215,0,.25), rgba(255,140,0,.15));
   border-color: var(--gold);
   color: var(--gold);
@@ -999,6 +1000,37 @@ tr:hover td { background: rgba(255,215,0,.05); }
 @keyframes pulseToggle {
   0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.25); }
   50%     { box-shadow: 0 0 22px rgba(255,215,0,.5); }
+}
+/* Alias untuk hadiah utama (backward compat) */
+.btn-grand-marquee-toggle { /* sama dengan .btn-marquee-toggle */ }
+
+/* Pop-out clone untuk kartu hadiah biasa */
+.prize-card-popout-clone {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9990;
+  border: 2px solid var(--gold) !important;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: grandCardPopOut .65s cubic-bezier(.34,1.56,.64,1) forwards;
+  box-sizing: border-box;
+  background: rgba(8,20,10,.97);
+}
+/* Animasi zoom-in saat siapUndi memilih kartu */
+@keyframes prizeCardSelected {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(200,80,192,0); }
+  35%  { transform: scale(1.22); box-shadow: 0 0 60px rgba(200,80,192,.6), 0 20px 60px rgba(0,0,0,.6); }
+  60%  { transform: scale(1.25); box-shadow: 0 0 80px rgba(200,80,192,.7), 0 24px 70px rgba(0,0,0,.65); }
+  80%  { transform: scale(1.22); box-shadow: 0 0 50px rgba(200,80,192,.5); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 rgba(200,80,192,0); }
+}
+.prize-card-popout-clone.siap-undi-popout {
+  animation: prizeCardSelected .7s cubic-bezier(.34,1.56,.64,1) forwards;
+  border-color: #C850C0 !important;
+}
+/* Kartu asli tersembunyi saat clone aktif */
+.prize-card.popout-hidden {
+  visibility: hidden;
 }
 
 /* Viewport untuk grand marquee */
@@ -1393,7 +1425,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
         <div class="grand-frame-title">
           <span class="gf-icon">⭐</span> Hadiah Utama
           <span class="gf-count" id="gf-count">0 hadiah</span>
-          <button class="btn-grand-marquee-toggle" id="btn-grand-marquee" onclick="toggleGrandMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
+          <button class="btn-marquee-toggle btn-grand-marquee-toggle" id="btn-grand-marquee" onclick="toggleGrandMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
         </div>
 
         <div id="grand-list">
@@ -1407,6 +1439,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
           <span class="pf-icon">🎁</span> Daftar Hadiah Undi
           <span class="pf-spacer"></span>
           <span class="pf-count" id="pf-count">0 hadiah</span>
+          <button class="btn-marquee-toggle" id="btn-prize-marquee" onclick="togglePrizeMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
           <button class="btn-siap-undi-inline" id="btn-siap-undi" onclick="siapUndi()" title="Acak hadiah mana yang akan diundi untuk peserta">🎯 Siap Undi</button>
         </div>
         <div class="prize-track-viewport" id="prize-track-viewport">
@@ -1661,7 +1694,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby_R7fdL_bwpBOgsmGwlh1pf_XOxkJyDYy6mkpwD-MeUoFwNTis-s5am8cO9_I3Amq-/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzh9sg6R-6h0NUyL13T2POI587QndbUFBxFSGaocaBluSa_nKd4hpJPqxiehzz0fslf/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2083,6 +2116,7 @@ function renderUndianList(){
   el.innerHTML = `<div class="prize-grid" id="prize-grid">${original}${duplicate}</div>`;
   startBoxRunning();
   renderGrandList();
+  reattachPrizeMarquee(); // restart marquee hadiah biasa jika aktif
 
   // Cek apakah semua hadiah biasa sudah selesai → aktifkan grand-only mode
   const semuaSelesaiCek = hadiahBiasa.length > 0 && hadiahBiasa.every(h => h.status === 'Selesai');
@@ -2448,6 +2482,143 @@ function setupPrizeHoverPause(){
   prizeHoverListenersAttached = true;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PRIZE PANEL MARQUEE — Vertikal scroll + pop-out clone saat spotlight
+// Mirip dengan grand marquee, tapi pakai scrollTop pada prize-track-viewport
+// (karena prize panel sudah punya viewport + scrollable grid)
+// ═══════════════════════════════════════════════════════════════
+
+let prizeMarqueeEnabled   = false;
+let prizeMarqueeRAF       = null;
+let prizeMarqueePaused    = false;
+let prizeMarqueeSpeed     = 0.55;
+let prizeMarqueeTimer     = null;
+let lastPrizeSpotlight    = null;
+let _prizePopoutClone     = null;
+
+function togglePrizeMarquee(){
+  prizeMarqueeEnabled = !prizeMarqueeEnabled;
+  const btn      = document.getElementById('btn-prize-marquee');
+  const viewport = document.getElementById('prize-track-viewport');
+  if(!btn) return;
+
+  if(prizeMarqueeEnabled){
+    btn.textContent = '⏸ Animasi';
+    btn.classList.add('active');
+    startPrizeMarquee();
+  } else {
+    btn.textContent = '▶ Animasi';
+    btn.classList.remove('active');
+    stopPrizeMarquee();
+  }
+}
+
+function startPrizeMarquee(){
+  stopPrizeMarquee();
+  if(!prizeMarqueeEnabled) return;
+  if(slotRunning || lockedPrizeIdx !== null) return; // jangan jalan saat undian aktif
+
+  const viewport = document.getElementById('prize-track-viewport');
+  const grid     = document.getElementById('prize-grid');
+  if(!viewport || !grid) return;
+
+  // Gunakan loopHeight yang sudah ada (seamless loop dari duplikasi kartu)
+  const loopHeight = getLoopHeight(grid);
+  if(loopHeight <= 0) return;
+
+  prizeMarqueePaused = false;
+  lastPrizeSpotlight = null;
+
+  function step(){
+    if(!prizeMarqueeEnabled){ prizeMarqueeRAF = null; return; }
+    if(prizeMarqueePaused || slotRunning || lockedPrizeIdx !== null){
+      prizeMarqueeRAF = requestAnimationFrame(step); return;
+    }
+
+    viewport.scrollTop += prizeMarqueeSpeed;
+    if(viewport.scrollTop >= loopHeight){
+      viewport.scrollTop -= loopHeight;
+    }
+
+    // Cek kartu yang paling dekat ke tengah viewport
+    checkPrizeSpotlight(viewport);
+
+    prizeMarqueeRAF = requestAnimationFrame(step);
+  }
+  prizeMarqueeRAF = requestAnimationFrame(step);
+}
+
+function stopPrizeMarquee(){
+  if(prizeMarqueeRAF){ cancelAnimationFrame(prizeMarqueeRAF); prizeMarqueeRAF = null; }
+  clearTimeout(prizeMarqueeTimer);
+  prizeMarqueePaused = false;
+  lastPrizeSpotlight = null;
+  cleanupPrizePopout();
+}
+
+function checkPrizeSpotlight(viewport){
+  const cards = Array.from(viewport.querySelectorAll('.prize-card:not(.done):not([id$="-dup"])'));
+  if(!cards.length) return;
+
+  const center  = viewport.getBoundingClientRect().top + viewport.clientHeight / 2;
+  let closest   = null;
+  let minDist   = Infinity;
+
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const cardCenter = rect.top + rect.height / 2;
+    const dist = Math.abs(cardCenter - center);
+    if(dist < minDist){ minDist = dist; closest = card; }
+  });
+
+  if(closest && closest !== lastPrizeSpotlight && minDist < 16){
+    lastPrizeSpotlight = closest;
+    prizePanelPopout(closest);
+  }
+}
+
+function prizePanelPopout(card, extraClass){
+  // Bersihkan popout sebelumnya
+  cleanupPrizePopout();
+  prizeMarqueePaused = true;
+
+  const rect  = card.getBoundingClientRect();
+  const clone = card.cloneNode(true);
+  clone.classList.add('prize-card-popout-clone');
+  if(extraClass) clone.classList.add(extraClass);
+  clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+  clone.style.top    = rect.top    + 'px';
+  clone.style.left   = rect.left   + 'px';
+  clone.style.width  = rect.width  + 'px';
+  clone.style.height = rect.height + 'px';
+  document.body.appendChild(clone);
+  _prizePopoutClone = clone;
+
+  card.classList.add('popout-hidden');
+
+  clearTimeout(prizeMarqueeTimer);
+  prizeMarqueeTimer = setTimeout(()=>{
+    cleanupPrizePopout(card);
+    prizeMarqueePaused = false;
+  }, 1100);
+}
+
+function cleanupPrizePopout(card){
+  if(_prizePopoutClone){ _prizePopoutClone.remove(); _prizePopoutClone = null; }
+  if(card) card.classList.remove('popout-hidden');
+  // Bersihkan semua popout-hidden yang tersisa
+  document.querySelectorAll('.prize-card.popout-hidden').forEach(c=>c.classList.remove('popout-hidden'));
+}
+
+// Dipanggil setelah renderUndianList agar marquee restart dengan kartu baru
+function reattachPrizeMarquee(){
+  if(prizeMarqueeEnabled){
+    stopPrizeMarquee();
+    // Delay agar DOM kartu selesai dirender
+    setTimeout(()=>startPrizeMarquee(), 300);
+  }
+}
+
 function startBoxRunning(){
   stopBoxRunning();
   setupPrizeHoverPause();
@@ -2508,6 +2679,7 @@ function siapUndi(){
   if(btn.disabled) return;
   btn.disabled = true;
   stopBoxRunning();
+  stopPrizeMarquee(); // hentikan marquee saat reel jackpot mulai
 
   const viewport = document.getElementById('prize-track-viewport');
   // Hanya kartu set asli (tanpa -dup) yang dipakai sebagai "reel" jackpot,
@@ -2560,6 +2732,13 @@ function siapUndi(){
         if(winCard && viewport){
           const targetScroll = winCard.offsetTop - (viewport.clientHeight - winCard.offsetHeight) / 2;
           viewport.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+
+          // Pop-out: kartu terpilih zoom keluar panel sebentar lalu kembali
+          requestAnimationFrame(()=>{
+            requestAnimationFrame(()=>{
+              prizePanelPopout(winCard, 'siap-undi-popout');
+            });
+          });
         }
       });
       playFanfare();
@@ -2593,6 +2772,7 @@ async function mulaiUndian(namaHadiah, jumlah){
   slotRunning   = true;
   stopRequested = false;
   stopBoxRunning();
+  stopPrizeMarquee(); // hentikan marquee saat slot undian dibuka
 
   currentHadiahCtx = { namaHadiah, jumlah };
 
@@ -2827,6 +3007,8 @@ function tutupSlot(){
   document.getElementById('btn-stop-manual').style.display = 'none';
   document.getElementById('slot-stop-info').style.display  = 'none';
   refreshAll(); // 1 request gabungan ganti 3
+  // Restart marquee jika masih aktif
+  setTimeout(()=>reattachPrizeMarquee(), 500);
 }
 
 // ─── KONFIRMASI PEMENANG ─────────────────────────────────────
