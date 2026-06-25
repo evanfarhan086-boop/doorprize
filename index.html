@@ -1025,17 +1025,35 @@ tr:hover td { background: rgba(255,215,0,.05); }
   will-change: transform;
 }
 
-/* Zoom-pulse saat kartu berhenti di tengah viewport */
-@keyframes grandCardZoom {
-  0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
-  40%  { transform: scale(1.045); box-shadow: 0 0 32px rgba(255,215,0,.35), 0 0 60px rgba(255,215,0,.15); }
-  70%  { transform: scale(1.025); }
-  100% { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+/* ── Pop-out breakout: kartu keluar panel, lalu kembali ── */
+@keyframes grandCardPopOut {
+  0%   {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 0 0 rgba(255,215,0,0);
+    z-index: 1;
+  }
+  30%  {
+    transform: scale(1.22) translateY(0);
+    box-shadow: 0 0 60px rgba(255,215,0,.55), 0 20px 60px rgba(0,0,0,.6);
+  }
+  55%  {
+    transform: scale(1.25) translateY(0);
+    box-shadow: 0 0 80px rgba(255,215,0,.65), 0 24px 70px rgba(0,0,0,.65);
+  }
+  80%  {
+    transform: scale(1.22) translateY(0);
+    box-shadow: 0 0 60px rgba(255,215,0,.5), 0 20px 55px rgba(0,0,0,.55);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 0 0 rgba(255,215,0,0);
+  }
 }
 .grand-card.marquee-spotlight {
-  animation: grandCardZoom .7s cubic-bezier(.22,1,.36,1) forwards;
+  animation: grandCardPopOut .65s cubic-bezier(.34,1.56,.64,1) forwards;
   border-color: var(--gold) !important;
-  z-index: 2;
+  position: relative;
+  z-index: 9990 !important;   /* tampil di atas semua elemen termasuk panel */
 }
 
 /* ═══════════════════════════════════════════
@@ -1054,6 +1072,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   max-width: 780px;
   margin-left: auto;
   margin-right: auto;
+  overflow: visible; /* izinkan pop-out kartu keluar dari grid */
 }
 .dual-prize-grid.grand-only-mode .prize-frame {
   display: none;
@@ -1061,12 +1080,23 @@ tr:hover td { background: rgba(255,215,0,.05); }
 
 /* Grand frame diperbesar saat grand-only */
 .dual-prize-grid.grand-only-mode .grand-frame {
-  height: auto !important;       /* override height: var(--panel-h) dari base rule */
-  /* Tinggi cukup untuk 1 kartu grand + title + padding — tidak overflow halaman */
+  height: auto !important;
   min-height: 0;
   border-width: 2px;
   box-shadow: 0 0 80px rgba(255,215,0,.18), 0 12px 48px rgba(0,0,0,.5),
               inset 0 1px 0 rgba(255,255,255,.07);
+  /* Izinkan kartu keluar dari batas panel saat zoom spotlight */
+  overflow: visible;
+}
+/* grand-list juga harus visible agar kartu bisa pop-out */
+.dual-prize-grid.grand-only-mode #grand-list,
+.dual-prize-grid.grand-only-mode #grand-list.marquee-mode {
+  overflow: visible !important;
+}
+/* grand-marquee-track perlu z-index agar kartu spotlight tampil di atas segalanya */
+.dual-prize-grid.grand-only-mode .grand-marquee-track {
+  position: relative;
+  z-index: 0;
 }
 .dual-prize-grid.grand-only-mode .grand-frame-title {
   font-size: clamp(1.1rem, 2.6vw, 1.6rem);
@@ -1128,6 +1158,10 @@ tr:hover td { background: rgba(255,215,0,.05); }
 .dual-prize-grid.grand-only-mode #grand-list:not(.marquee-mode) {
   overflow-y: auto;
 }
+
+/* Kartu spotlight harus tampil di atas tab-content dan elemen sekitarnya */
+.tab-content { position: relative; }
+.grand-card.marquee-spotlight { isolation: auto; }
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
@@ -1620,7 +1654,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXiTOaJXcCJmoEpMuyIljGL7jV-wlMUlMEl0_flC6G1VGgKKVQZfL8MeFvac6C0QAv/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7ZHaLzcpWV4_g6WZJ31r6_HSKUdmEyvIBoVqG4w_M41r35rg7q7uuyxnubYm8NZHY/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2227,16 +2261,40 @@ function zoomSpotlight(card){
   // Hapus spotlight sebelumnya
   document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>{
     c.classList.remove('marquee-spotlight');
+    c.style.zIndex = '';
   });
-  // Jeda sejenak
+
   grandMarqueePaused = true;
+
+  // Pop-out hanya aktif saat grand-only mode (panel di tengah)
+  // Pada mode normal (2 kolom), kartu tidak pop-out karena ruang terbatas
+  if(grandOnlyActive){
+    // Pastikan semua ancestor tidak memotong overflow kartu
+    const track = card.closest('.grand-marquee-track');
+    const list  = card.closest('#grand-list');
+    const frame = card.closest('.grand-frame');
+    if(track) track.style.zIndex = '9989';
+    if(list)  { list.style.overflow  = 'visible'; list.style.zIndex = '9989'; }
+    if(frame) { frame.style.overflow = 'visible'; }
+  }
+
   card.classList.add('marquee-spotlight');
 
   clearTimeout(grandMarqueeSpotlightTimer);
   grandMarqueeSpotlightTimer = setTimeout(()=>{
     card.classList.remove('marquee-spotlight');
+    card.style.zIndex = '';
+
+    // Kembalikan overflow setelah animasi selesai
+    if(grandOnlyActive){
+      const track = card.closest('.grand-marquee-track');
+      const list  = card.closest('#grand-list');
+      if(track) track.style.zIndex = '';
+      if(list)  { list.style.overflow = ''; list.style.zIndex = ''; }
+    }
+
     grandMarqueePaused = false;
-  }, 1100); // berhenti 1.1 detik saat di tengah
+  }, 1100);
 }
 
 function stopGrandMarquee(){
