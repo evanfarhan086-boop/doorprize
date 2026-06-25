@@ -1059,8 +1059,8 @@ tr:hover td { background: rgba(255,215,0,.05); }
 
 /* Grand frame diperbesar saat grand-only */
 .dual-prize-grid.grand-only-mode .grand-frame {
-  height: auto;
-  min-height: calc(var(--panel-h) * 1.55);
+  height: auto !important;       /* override height: var(--panel-h) dari base rule */
+  min-height: 70vh;              /* ambil 70% tinggi layar — jauh lebih besar */
   border-width: 2px;
   box-shadow: 0 0 80px rgba(255,215,0,.18), 0 12px 48px rgba(0,0,0,.5),
               inset 0 1px 0 rgba(255,255,255,.07);
@@ -1121,6 +1121,11 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 .dual-prize-grid.grand-only-mode .grand-frame {
   animation: grandOnlyReveal .55s cubic-bezier(.22,1,.36,1) forwards;
+}
+/* Pastikan #grand-list mengisi sisa tinggi panel yang kini jauh lebih besar */
+.dual-prize-grid.grand-only-mode #grand-list {
+  flex: 1;
+  min-height: 0;
 }
 
 /* ═══════════════════════════════════════════
@@ -1614,7 +1619,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzygr7ZE3yntj2fKEJsrSKUBJFC5os05HSn5vK_wgKXWBf3AIY8pY3ycCFgB4DSSOVD/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvC4W0diHXzuEV9b82D3cmmOr905EPeq-7NHmfQ4TvHFtWY1CQ6C9tLUIxt9rzrlba/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
