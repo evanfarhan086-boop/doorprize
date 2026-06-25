@@ -880,12 +880,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   border-radius: 20px; padding: 4px 14px;
   flex-shrink: 0;
 }
-.grand-lock-note {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,140,0,.1); border: 1px solid rgba(255,140,0,.28);
-  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; flex: 0 0 auto;
-  font-size: .87rem; color: var(--orange2); font-weight: 700;
-}
+
 #grand-list {
   flex: 1; min-height: 0;
   overflow-y: auto;
@@ -1039,6 +1034,93 @@ tr:hover td { background: rgba(255,215,0,.05); }
   animation: grandCardZoom .7s cubic-bezier(.22,1,.36,1) forwards;
   border-color: var(--gold) !important;
   z-index: 2;
+}
+
+/* ═══════════════════════════════════════════
+   GRAND-ONLY MODE — saat semua hadiah biasa selesai
+   Panel hadiah biasa hilang, hadiah utama jadi full-center
+═══════════════════════════════════════════ */
+
+/* Wrapper transisi */
+.dual-prize-grid {
+  transition: grid-template-columns .5s ease;
+}
+
+/* Mode grand-only: sembunyikan kolom prize-frame */
+.dual-prize-grid.grand-only-mode {
+  grid-template-columns: 1fr;
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.dual-prize-grid.grand-only-mode .prize-frame {
+  display: none;
+}
+
+/* Grand frame diperbesar saat grand-only */
+.dual-prize-grid.grand-only-mode .grand-frame {
+  height: auto;
+  min-height: calc(var(--panel-h) * 1.55);
+  border-width: 2px;
+  box-shadow: 0 0 80px rgba(255,215,0,.18), 0 12px 48px rgba(0,0,0,.5),
+              inset 0 1px 0 rgba(255,255,255,.07);
+}
+.dual-prize-grid.grand-only-mode .grand-frame-title {
+  font-size: clamp(1.2rem, 3vw, 1.9rem);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255,215,0,.2);
+}
+.dual-prize-grid.grand-only-mode .grand-card-name {
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+}
+.dual-prize-grid.grand-only-mode .grand-card-header {
+  padding: 28px 22px 16px;
+}
+.dual-prize-grid.grand-only-mode .grand-card-body {
+  padding: 16px 22px 16px;
+}
+.dual-prize-grid.grand-only-mode .grand-card-action {
+  padding: 0 22px 22px;
+}
+.dual-prize-grid.grand-only-mode .grand-card-action .btn {
+  padding: 16px 20px;
+  font-size: 1.05rem;
+}
+
+/* Tombol "Lihat Hadiah Biasa" — muncul saat grand-only */
+#btn-show-hadiah-biasa {
+  display: none;
+  margin: 0 auto 18px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,215,0,.2);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 18px;
+  font-family: 'Nunito', sans-serif;
+  font-size: .8rem; font-weight: 800;
+  cursor: pointer; transition: all .2s;
+  letter-spacing: .03em;
+}
+#btn-show-hadiah-biasa:hover {
+  color: var(--gold2);
+  border-color: rgba(255,215,0,.4);
+  background: rgba(255,215,0,.07);
+}
+.dual-prize-grid.grand-only-mode ~ #btn-show-hadiah-biasa,
+#btn-show-hadiah-biasa.visible {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Animasi masuk grand-only */
+@keyframes grandOnlyReveal {
+  from { opacity:0; transform: scale(.96) translateY(10px); }
+  to   { opacity:1; transform: scale(1)  translateY(0); }
+}
+.dual-prize-grid.grand-only-mode .grand-frame {
+  animation: grandOnlyReveal .55s cubic-bezier(.22,1,.36,1) forwards;
 }
 
 /* ═══════════════════════════════════════════
@@ -1266,10 +1348,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
           <span class="gf-count" id="gf-count">0 hadiah</span>
           <button class="btn-grand-marquee-toggle" id="btn-grand-marquee" onclick="toggleGrandMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
         </div>
-        <div id="grand-lock-note" class="grand-lock-note" style="display:none">
-          <span>🔒</span>
-          <span>Hadiah Utama terkunci — selesaikan semua hadiah biasa terlebih dahulu sebelum mengundi Hadiah Utama.</span>
-        </div>
+
         <div id="grand-list">
           <p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>
         </div>
@@ -1293,6 +1372,13 @@ tr:hover td { background: rgba(255,215,0,.05); }
           <button class="btn-acak-hadiah" title="hidden">🎯 Siap Undi</button>
         </div>
       </div>
+    </div>
+
+    <!-- Tombol akses hadiah biasa saat grand-only mode aktif -->
+    <div style="text-align:center">
+      <button id="btn-show-hadiah-biasa" onclick="toggleHadiahBiasaPanel()">
+        📋 Lihat Daftar Hadiah Biasa
+      </button>
     </div>
 
     <div class="card">
@@ -1528,7 +1614,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx3JjeTcHzIJo-tQOCMfAKVRf0jrgs3zu6s1w-WL1oh1x-FFGhJn3mydE3Ls2EaMHE/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzygr7ZE3yntj2fKEJsrSKUBJFC5os05HSn5vK_wgKXWBf3AIY8pY3ycCFgB4DSSOVD/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -1905,6 +1991,7 @@ function renderUndianList(){
   if(!hadiahBiasa.length){
     el.innerHTML='<p style="color:var(--muted);text-align:center;padding:36px;font-size:1.05rem">Belum ada hadiah biasa. Buka menu Hadiah untuk menambahkan.</p>';
     renderGrandList();
+    applyGrandOnlyMode(false);
     return;
   }
 
@@ -1949,12 +2036,15 @@ function renderUndianList(){
   el.innerHTML = `<div class="prize-grid" id="prize-grid">${original}${duplicate}</div>`;
   startBoxRunning();
   renderGrandList();
+
+  // Cek apakah semua hadiah biasa sudah selesai → aktifkan grand-only mode
+  const semuaSelesaiCek = hadiahBiasa.length > 0 && hadiahBiasa.every(h => h.status === 'Selesai');
+  applyGrandOnlyMode(semuaSelesaiCek);
 }
 
 // ─── HADIAH UTAMA (GRAND PRIZE) — render & gating ─────────────
 function renderGrandList(){
   const el        = document.getElementById('grand-list');
-  const lockNote  = document.getElementById('grand-lock-note');
   const gfCount   = document.getElementById('gf-count');
   if(!el) return;
 
@@ -1967,8 +2057,6 @@ function renderGrandList(){
     const selesaiUtama = grandItems.filter(h=>h.status==='Selesai').length;
     gfCount.textContent = `${grandItems.length} hadiah${selesaiUtama?` • ${selesaiUtama} selesai`:''}`;
   }
-
-  if(lockNote) lockNote.style.display = (grandItems.length && terkunci) ? 'flex' : 'none';
 
   if(!grandItems.length){
     el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>';
@@ -2182,6 +2270,42 @@ function reattachGrandMarquee(){
   } else {
     list.classList.remove('marquee-mode');
   }
+}
+
+// ─── GRAND-ONLY MODE — transisi saat semua hadiah biasa selesai ─────────────
+// Menyembunyikan kolom hadiah biasa, membesarkan panel hadiah utama ke tengah.
+// Tombol "Lihat Hadiah Biasa" memberi akses lewat panel overlay Rekap.
+
+let grandOnlyActive = false;
+
+function applyGrandOnlyMode(aktif){
+  const grid    = document.querySelector('.dual-prize-grid');
+  const btnShow = document.getElementById('btn-show-hadiah-biasa');
+  if(!grid) return;
+
+  if(aktif && !grandOnlyActive){
+    grandOnlyActive = true;
+
+    // Delay singkat agar render hadiah utama selesai dulu
+    setTimeout(()=>{
+      grid.classList.add('grand-only-mode');
+      if(btnShow) btnShow.classList.add('visible');
+
+      // Paksa reattach marquee setelah ukuran panel berubah
+      setTimeout(()=>reattachGrandMarquee(), 600);
+    }, 300);
+
+  } else if(!aktif && grandOnlyActive){
+    grandOnlyActive = false;
+    grid.classList.remove('grand-only-mode');
+    if(btnShow) btnShow.classList.remove('visible');
+    setTimeout(()=>reattachGrandMarquee(), 400);
+  }
+}
+
+// Tombol "Lihat Hadiah Biasa" — buka panel Rekap yang sudah berisi semua pemenang
+function toggleHadiahBiasaPanel(){
+  openPanel('rekap');
 }
 
 // ─── KOTAK HADIAH BERJALAN — auto-scroll VERTIKAL berkelanjutan ──
@@ -2746,6 +2870,8 @@ async function resetPemenangKonfirmasi(){
   showLoading(true,'MERESET...');
   await gasCall('resetPemenang');
   showLoading(false);
+  grandOnlyActive = false;
+  applyGrandOnlyMode(false);
   toast('Data pemenang direset','warn');
   cacheClear();
   refreshAll();
@@ -2757,6 +2883,8 @@ async function resetSemuaKonfirmasi(){
   await gasCall('resetSemua');
   showLoading(false);
   allPeserta=[]; allHadiah=[]; allRekap=[];
+  grandOnlyActive = false;
+  applyGrandOnlyMode(false);
   cacheClear();
   toast('Semua data direset','warn');
   loadPeserta();
