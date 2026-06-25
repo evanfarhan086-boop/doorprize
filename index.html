@@ -862,7 +862,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.14) 0%, transparent 60%);
 }
 .grand-frame-title {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
   margin-bottom: 16px; flex: 0 0 auto;
   font-family: 'Cinzel Decorative', serif;
   font-size: clamp(1.05rem, 2.6vw, 1.5rem);
@@ -872,12 +872,13 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 .grand-frame-title .gf-icon { font-size: 1.2em; }
 .grand-frame-title .gf-count {
-  margin-left: auto;
+  margin-left: auto;  /* dorong ke kanan, tombol tepat di sebelahnya */
   font-family: 'Nunito', sans-serif;
   font-size: .78rem; font-weight: 800; letter-spacing: .03em;
   color: var(--muted); text-transform: none;
   background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.22);
   border-radius: 20px; padding: 4px 14px;
+  flex-shrink: 0;
 }
 .grand-lock-note {
   display: flex; align-items: center; gap: 10px;
@@ -967,6 +968,77 @@ tr:hover td { background: rgba(255,215,0,.05); }
 .toggle-utama-wrap label {
   margin: 0; cursor: pointer; text-transform: none; letter-spacing: 0;
   font-size: .95rem; color: var(--gold2); font-weight: 800;
+}
+
+/* ═══════════════════════════════════════════
+   GRAND PRIZE — Vertical Marquee Scroll + Zoom
+═══════════════════════════════════════════ */
+/* Toggle button — inline di grand-frame-title */
+.btn-grand-marquee-toggle {
+  background: rgba(255,215,0,.1);
+  border: 1px solid rgba(255,215,0,.3);
+  color: var(--gold2);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: .72rem; font-weight: 900;
+  cursor: pointer; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 5px;
+  white-space: nowrap; flex-shrink: 0;
+  letter-spacing: .03em;
+}
+.btn-grand-marquee-toggle:hover {
+  background: rgba(255,215,0,.2);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(255,215,0,.25);
+}
+.btn-grand-marquee-toggle.active {
+  background: linear-gradient(135deg, rgba(255,215,0,.25), rgba(255,140,0,.15));
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 14px rgba(255,215,0,.3);
+  animation: pulseToggle 2.5s ease-in-out infinite;
+}
+@keyframes pulseToggle {
+  0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.25); }
+  50%     { box-shadow: 0 0 22px rgba(255,215,0,.5); }
+}
+
+/* Viewport untuk grand marquee */
+#grand-list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,215,0,.3) transparent;
+  position: relative; /* diperlukan untuk mode marquee */
+  transition: overflow .2s;
+}
+#grand-list.marquee-mode {
+  overflow-y: hidden; /* sembunyikan scrollbar saat marquee aktif */
+}
+#grand-list::-webkit-scrollbar { width: 6px; }
+#grand-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 4px; }
+
+/* Kontainer dalam yang menggerakkan kartu */
+.grand-marquee-track {
+  display: flex;
+  flex-direction: column;
+  /* tidak ada gap di sini — gap sudah ditangani oleh .grand-grid di dalamnya */
+  will-change: transform;
+}
+
+/* Zoom-pulse saat kartu berhenti di tengah viewport */
+@keyframes grandCardZoom {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+  40%  { transform: scale(1.045); box-shadow: 0 0 32px rgba(255,215,0,.35), 0 0 60px rgba(255,215,0,.15); }
+  70%  { transform: scale(1.025); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
+}
+.grand-card.marquee-spotlight {
+  animation: grandCardZoom .7s cubic-bezier(.22,1,.36,1) forwards;
+  border-color: var(--gold) !important;
+  z-index: 2;
 }
 
 /* ═══════════════════════════════════════════
@@ -1192,6 +1264,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
         <div class="grand-frame-title">
           <span class="gf-icon">⭐</span> Hadiah Utama
           <span class="gf-count" id="gf-count">0 hadiah</span>
+          <button class="btn-grand-marquee-toggle" id="btn-grand-marquee" onclick="toggleGrandMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
         </div>
         <div id="grand-lock-note" class="grand-lock-note" style="display:none">
           <span>🔒</span>
@@ -1455,7 +1528,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvuQxTLbqswFya-UtK7AI7_6Y4N2Dxzw8Z-5WeJFKEFKrxEHKHC-w1S6pe-_SZhMMD/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx3JjeTcHzIJo-tQOCMfAKVRf0jrgs3zu6s1w-WL1oh1x-FFGhJn3mydE3Ls2EaMHE/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -1522,8 +1595,8 @@ function closePanel(){
   }
   document.getElementById('panel-backdrop').classList.remove('show');
   currentPanel = null;
-  // Refresh undian data
-  loadHadiah(); loadRekap(); refreshStats();
+  // Refresh undian data — 1 request gabungan
+  refreshAll();
 }
 
 // Legacy showTab compatibility
@@ -1536,17 +1609,25 @@ function showTab(name, btn){
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────
-async function loadSettings(){
-  const r = await gasCall('getSettings');
-  appSettings = r.data || {};
+function applySettingsData(data){
+  appSettings = data||{};
   const s = appSettings;
-  document.getElementById('set-nama-acara').value = s.nama_acara     || '';
-  document.getElementById('set-tahun').value      = s.tahun_hijriah  || '';
-  document.getElementById('set-panitia').value    = s.nama_panitia   || '';
-  document.getElementById('set-org').value        = s.nama_organisasi|| '';
-  document.getElementById('set-lokasi').value     = s.lokasi         || '';
-  document.getElementById('set-tema').value       = s.tema           || '';
+  const setVal = (id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  setVal('set-nama-acara', s.nama_acara);
+  setVal('set-tahun',      s.tahun_hijriah);
+  setVal('set-panitia',    s.nama_panitia);
+  setVal('set-org',        s.nama_organisasi);
+  setVal('set-lokasi',     s.lokasi);
+  setVal('set-tema',       s.tema);
   applySettings();
+}
+async function loadSettings(){
+  const cached = cacheGet(CACHE_KEY_SETTINGS);
+  if(cached) applySettingsData(cached);   // tampil instan dari cache
+  const r = await gasCall('getSettings');
+  const fresh = r.data||{};
+  cacheSet(CACHE_KEY_SETTINGS, fresh);
+  applySettingsData(fresh);
 }
 function applySettings(){
   const s = appSettings;
@@ -1570,6 +1651,7 @@ async function simpanSettings(){
   showLoading(true,'MENYIMPAN...');
   await gasCall('saveSettings', obj);
   showLoading(false);
+  cacheSet(CACHE_KEY_SETTINGS, appSettings);  // update cache lokal
   applySettings();
   showAlert('alert-settings','✅ Pengaturan berhasil disimpan.','success');
 }
@@ -1690,23 +1772,69 @@ async function parseCSV(text){
 }
 
 // ─── STATS ───────────────────────────────────────────────────
+// ─── CACHE HELPERS ───────────────────────────────────────────
+// Data GAS di-cache di localStorage agar refresh berikutnya
+// terasa instan: data lama tampil dulu, lalu diganti data segar.
+const CACHE_KEY_HADIAH   = 'udp_cache_hadiah';
+const CACHE_KEY_REKAP    = 'udp_cache_rekap';
+const CACHE_KEY_SETTINGS = 'udp_cache_settings';
+const CACHE_TTL_MS       = 10 * 60 * 1000; // 10 menit
+function cacheSet(key, data){
+  try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), data})); }catch(e){}
+}
+function cacheGet(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(Date.now()-obj.ts > CACHE_TTL_MS) return null;
+    return obj.data;
+  }catch(e){ return null; }
+}
+function cacheClear(){
+  [CACHE_KEY_HADIAH,CACHE_KEY_REKAP,CACHE_KEY_SETTINGS].forEach(k=>{
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+}
+
+// ─── STATS ───────────────────────────────────────────────────
+function applyStats(r){
+  if(!r||!r.success) return;
+  document.getElementById('s-total').textContent  = r.totalPeserta  ??'—';
+  document.getElementById('s-aktif').textContent  = r.sisaPool      ??'—';
+  document.getElementById('s-menang').textContent = r.totalTerpilih ??'—';
+  document.getElementById('s-sisa').textContent   = r.sisaPool      ??'—';
+  document.getElementById('u-pool').textContent   = r.sisaPool      ??'—';
+  document.getElementById('u-hadir').textContent  = r.hadir         ??'—';
+}
 async function refreshStats(){
-  const r = await gasCall('getStatistik');
-  if(!r.success) return;
-  document.getElementById('s-total').textContent  = r.totalPeserta;
-  document.getElementById('s-aktif').textContent  = r.sisaPool;
-  document.getElementById('s-menang').textContent = r.totalTerpilih;
-  document.getElementById('s-sisa').textContent   = r.sisaPool;
-  document.getElementById('u-pool').textContent   = r.sisaPool;
-  document.getElementById('u-hadir').textContent  = r.hadir;
+  applyStats(await gasCall('getStatistik'));
 }
 
 // ─── HADIAH ──────────────────────────────────────────────────
-async function loadHadiah(){
-  const r = await gasCall('getHadiah');
-  allHadiah = r.data || [];
+function applyHadiah(data){
+  allHadiah = data||[];
   renderHadiah();
   renderUndianList();
+}
+async function loadHadiah(){
+  const cached = cacheGet(CACHE_KEY_HADIAH);
+  if(cached) applyHadiah(cached);         // tampil instan dari cache
+  const r = await gasCall('getHadiah');
+  const fresh = r.data||[];
+  cacheSet(CACHE_KEY_HADIAH, fresh);
+  applyHadiah(fresh);
+}
+
+// ─── REFRESH GABUNGAN pasca-aksi — 1 request ganti 3 ─────────
+async function refreshAll(){
+  const r = await gasCall('getRefreshData');
+  if(!r.success) return;
+  cacheSet(CACHE_KEY_HADIAH, r.hadiah);
+  cacheSet(CACHE_KEY_REKAP,  r.rekap);
+  applyHadiah(r.hadiah);
+  applyRekap(r.rekap);
+  applyStats(r.statistik);
 }
 function renderHadiah(){
   const el = document.getElementById('hadiah-list');
@@ -1746,6 +1874,7 @@ async function simpanSemuaHadiah(){
   if(!allHadiah.length) return showAlert('alert-hadiah','❌ Belum ada hadiah.','error');
   showLoading(true,'MENYIMPAN HADIAH...');
   await gasCall('simpanHadiah', allHadiah);
+  cacheSet(CACHE_KEY_HADIAH, allHadiah);  // update cache lokal
   await loadHadiah();
   showLoading(false);
   toast('Hadiah berhasil disimpan','success');
@@ -1874,6 +2003,185 @@ function renderGrandList(){
       </div>
     </div>`;
   }).join('') + '</div>';
+
+  // Restart marquee animasi jika sedang aktif
+  // (dipanggil setelah konten baru di-render)
+  requestAnimationFrame(()=>reattachGrandMarquee());
+}
+
+// ─── GRAND PRIZE MARQUEE — Vertikal scroll + zoom saat terpusat ──
+// Kartu bergerak naik perlahan; ketika sebuah kartu mencapai tengah
+// viewport, animasi melambat, zoom, berhenti sejenak, lalu lanjut.
+let grandMarqueeEnabled = false;
+let grandMarqueeRAF     = null;
+let grandMarqueePaused  = false;  // true saat kartu spotlight tampil
+let grandMarqueeOffset  = 0;      // translateY saat ini (px, selalu negatif = ke atas)
+let grandMarqueeSpeed   = 0.55;   // px per frame normal
+let grandMarqueeSpotlightTimer = null;
+
+function toggleGrandMarquee(){
+  grandMarqueeEnabled = !grandMarqueeEnabled;
+  const btn = document.getElementById('btn-grand-marquee');
+  const list = document.getElementById('grand-list');
+  if(!btn || !list) return;
+
+  if(grandMarqueeEnabled){
+    btn.textContent  = '⏸ Animasi';
+    btn.classList.add('active');
+    list.classList.add('marquee-mode');
+    startGrandMarquee();
+  } else {
+    btn.textContent  = '▶ Animasi';
+    btn.classList.remove('active');
+    list.classList.remove('marquee-mode');
+    stopGrandMarquee();
+    // kembalikan posisi scroll normal
+    grandMarqueeOffset = 0;
+    const track = list.querySelector('.grand-marquee-track');
+    if(track) track.style.transform = 'translateY(0)';
+  }
+}
+
+function startGrandMarquee(){
+  stopGrandMarquee();
+  const list  = document.getElementById('grand-list');
+  if(!list || !grandMarqueeEnabled) return;
+
+  // Pastikan kartu dibungkus dalam .grand-marquee-track
+  let track = list.querySelector('.grand-marquee-track');
+  if(!track){
+    const grid = list.querySelector('.grand-grid');
+    if(!grid) return;
+    track = document.createElement('div');
+    track.className = 'grand-marquee-track';
+    list.insertBefore(track, grid);
+    track.appendChild(grid);
+  }
+
+  // Duplikasi kartu untuk seamless loop (jika belum ada klon)
+  const grid = track.querySelector('.grand-grid');
+  if(grid && !track.querySelector('.grand-grid-clone')){
+    const clone = grid.cloneNode(true);
+    clone.classList.add('grand-grid-clone');
+    clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+    track.appendChild(clone);
+  }
+
+  const listH  = list.clientHeight;
+  // Hitung tinggi satu salinan SETELAH klon ditambahkan (track = 2× grid)
+  // Beri sedikit waktu agar DOM merender ukuran
+  grandMarqueeOffset = 0;
+  grandMarqueePaused = false;
+  lastSpotlightCard  = null;
+
+  // Gunakan requestAnimationFrame satu kali agar ukuran track ter-update
+  requestAnimationFrame(()=>{
+    const origH = track.scrollHeight / 2;
+
+    function step(){
+      if(!grandMarqueeEnabled){ grandMarqueeRAF = null; return; }
+      if(grandMarqueePaused){
+        grandMarqueeRAF = requestAnimationFrame(step); return;
+      }
+
+      grandMarqueeOffset -= grandMarqueeSpeed; // selalu bergerak ke atas
+
+      // Seamless loop: ketika offset melebihi tinggi satu salinan, reset ke 0
+      if(Math.abs(grandMarqueeOffset) >= origH){
+        grandMarqueeOffset = 0;
+      }
+
+      track.style.transform = `translateY(${grandMarqueeOffset}px)`;
+
+      // Cek kartu mana yang paling dekat ke tengah viewport
+      checkSpotlightCard(track, list, listH);
+
+      grandMarqueeRAF = requestAnimationFrame(step);
+    }
+    grandMarqueeRAF = requestAnimationFrame(step);
+  });
+}
+
+// Deteksi kartu yang paling dekat ke tengah viewport grand-list
+let lastSpotlightCard = null;
+function checkSpotlightCard(track, list, listH){
+  const cards  = track.querySelectorAll('.grand-card');
+  if(!cards.length) return;
+  const center = listH / 2;
+
+  let closest = null;
+  let minDist  = Infinity;
+  cards.forEach(card => {
+    // posisi relatif terhadap list (viewport), bukan dokumen
+    const cardTop    = card.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    const cardCenter = cardTop + card.offsetHeight / 2;
+    const dist       = Math.abs(cardCenter - center);
+    if(dist < minDist){
+      minDist  = dist;
+      closest  = card;
+    }
+  });
+
+  // Trigger zoom hanya ketika kartu baru masuk zona tengah (threshold 20px)
+  if(closest && closest !== lastSpotlightCard && minDist < 20){
+    lastSpotlightCard = closest;
+    zoomSpotlight(closest);
+  }
+}
+
+function zoomSpotlight(card){
+  // Hapus spotlight sebelumnya
+  document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>{
+    c.classList.remove('marquee-spotlight');
+  });
+  // Jeda sejenak
+  grandMarqueePaused = true;
+  card.classList.add('marquee-spotlight');
+
+  clearTimeout(grandMarqueeSpotlightTimer);
+  grandMarqueeSpotlightTimer = setTimeout(()=>{
+    card.classList.remove('marquee-spotlight');
+    grandMarqueePaused = false;
+  }, 1100); // berhenti 1.1 detik saat di tengah
+}
+
+function stopGrandMarquee(){
+  if(grandMarqueeRAF){ cancelAnimationFrame(grandMarqueeRAF); grandMarqueeRAF = null; }
+  clearTimeout(grandMarqueeSpotlightTimer);
+  grandMarqueePaused = false;
+  lastSpotlightCard  = null;
+  // Bersihkan kelas spotlight
+  document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>c.classList.remove('marquee-spotlight'));
+}
+
+// Dipanggil ulang setiap renderGrandList agar track segar
+function reattachGrandMarquee(){
+  const list = document.getElementById('grand-list');
+  if(!list) return;
+  stopGrandMarquee();
+  grandMarqueeOffset = 0;
+  lastSpotlightCard  = null;
+
+  // Bersihkan wrapper lama jika ada (beserta klon-nya)
+  const oldTrack = list.querySelector('.grand-marquee-track');
+  if(oldTrack){
+    // Hapus elemen klon dulu
+    const clone = oldTrack.querySelector('.grand-grid-clone');
+    if(clone) clone.remove();
+    // Pindahkan konten kembali ke list
+    Array.from(oldTrack.children).forEach(ch => list.insertBefore(ch, oldTrack));
+    oldTrack.remove();
+  }
+  // Reset transform sisa
+  const grid = list.querySelector('.grand-grid');
+  if(grid) grid.style.transform = '';
+
+  if(grandMarqueeEnabled){
+    list.classList.add('marquee-mode');
+    startGrandMarquee();
+  } else {
+    list.classList.remove('marquee-mode');
+  }
 }
 
 // ─── KOTAK HADIAH BERJALAN — auto-scroll VERTIKAL berkelanjutan ──
@@ -2284,7 +2592,7 @@ function tutupSlot(){
   document.getElementById('slot-overlay').classList.remove('show');
   document.getElementById('btn-stop-manual').style.display = 'none';
   document.getElementById('slot-stop-info').style.display  = 'none';
-  loadHadiah(); loadRekap();
+  refreshAll(); // 1 request gabungan ganti 3
 }
 
 // ─── KONFIRMASI PEMENANG ─────────────────────────────────────
@@ -2305,7 +2613,8 @@ async function konfirmasiTidakHadir(noKK, namaHadiah){
 }
 async function konfirmasiSemuaHadir(pemenang, namaHadiah){
   showLoading(true,'MENYIMPAN...');
-  for(const p of pemenang) await gasCall('konfirmasiPemenang', p.noKK, 'Hadir', '');
+  // Parallelkan konfirmasi semua pemenang sekaligus (bukan serial)
+  await Promise.all(pemenang.map(p=>gasCall('konfirmasiPemenang', p.noKK, 'Hadir', '')));
   showLoading(false);
   tutupSlot();
   toast('Semua pemenang dikonfirmasi hadir ✅','success');
@@ -2345,12 +2654,19 @@ function buatConfetti(){
 }
 
 // ─── REKAP ───────────────────────────────────────────────────
-async function loadRekap(){
-  const r = await gasCall('getRekap');
-  allRekap = r.data || [];
+function applyRekap(data){
+  allRekap = data||[];
   renderRekap(allRekap);
   renderPemenangToday(allRekap);
-  refreshStats();
+}
+async function loadRekap(){
+  const cached = cacheGet(CACHE_KEY_REKAP);
+  if(cached) applyRekap(cached);          // tampil instan dari cache
+  const r = await gasCall('getRekap');
+  const fresh = r.data||[];
+  cacheSet(CACHE_KEY_REKAP, fresh);
+  applyRekap(fresh);
+  applyStats(await gasCall('getStatistik'));
 }
 function renderRekap(data){
   const container = document.getElementById('rekap-per-hadiah');
@@ -2431,7 +2747,8 @@ async function resetPemenangKonfirmasi(){
   await gasCall('resetPemenang');
   showLoading(false);
   toast('Data pemenang direset','warn');
-  loadHadiah(); loadRekap(); refreshStats();
+  cacheClear();
+  refreshAll();
 }
 async function resetSemuaKonfirmasi(){
   if(!confirm('⚠️ RESET SEMUA DATA? Peserta, hadiah, dan pemenang akan terhapus!')) return;
@@ -2440,20 +2757,65 @@ async function resetSemuaKonfirmasi(){
   await gasCall('resetSemua');
   showLoading(false);
   allPeserta=[]; allHadiah=[]; allRekap=[];
+  cacheClear();
   toast('Semua data direset','warn');
-  loadPeserta(); loadHadiah(); loadRekap();
+  loadPeserta();
+  refreshAll();
 }
 
 // ─── INIT ────────────────────────────────────────────────────
+// Pre-warm GAS saat mouse mendekati tombol Undi —
+// mengurangi cold-start delay ketika tombol benar-benar diklik.
+let gasWarmed = false;
+function warmGas(){
+  if(gasWarmed) return;
+  gasWarmed = true;
+  gasCall('ping').catch(()=>{});
+}
+// Pasang listener pre-warm di tombol Undi Sekarang & Siap Undi
+document.addEventListener('mouseover', e=>{
+  const t = e.target.closest('button');
+  if(!t) return;
+  const txt = t.textContent||'';
+  if(txt.includes('Undi') || txt.includes('Siap')) warmGas();
+}, {passive:true});
+
 window.onload = async () => {
   showLoading(true,'MEMUAT APLIKASI...');
-  await gasCall('initSheets');
-  await loadSettings();
-  await loadHadiah();
-  await loadRekap();
-  await refreshStats();
+
+  // ── Tampilkan cache dulu (0ms) ──────────────────────────────
+  const cachedSettings = cacheGet(CACHE_KEY_SETTINGS);
+  const cachedHadiah   = cacheGet(CACHE_KEY_HADIAH);
+  const cachedRekap    = cacheGet(CACHE_KEY_REKAP);
+  if(cachedSettings) applySettingsData(cachedSettings);
+  if(cachedHadiah)   applyHadiah(cachedHadiah);
+  if(cachedRekap)    applyRekap(cachedRekap);
+  // Jika semua cache ada, sembunyikan loading lebih awal
+  if(cachedSettings && cachedHadiah && cachedRekap){
+    showLoading(false);
+    toast('Memuat data terbaru…','info');
+  }
+
+  // ── 1 request gabungan ke GAS ──────────────────────────────
+  try {
+    const r = await gasCall('getInitialData');
+    if(r.success){
+      cacheSet(CACHE_KEY_SETTINGS, r.settings);
+      cacheSet(CACHE_KEY_HADIAH,   r.hadiah);
+      cacheSet(CACHE_KEY_REKAP,    r.rekap);
+      applySettingsData(r.settings);
+      applyHadiah(r.hadiah);
+      applyRekap(r.rekap);
+      applyStats(r.statistik);
+    }
+  } catch(err){
+    toast('Gagal terhubung ke server: '+err.message,'error');
+  }
+
   showLoading(false);
   toast('Aplikasi siap digunakan 🌙','success');
+  // Pre-warm di background agar request pertama lebih cepat
+  setTimeout(()=>{ gasWarmed=true; gasCall('ping').catch(()=>{}); }, 2000);
 };
 </script>
 </body>
