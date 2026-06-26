@@ -1,2942 +1,730 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0B2419">
-<title>Undian Doorprize — Tahun Baru Islam</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"></noscript>
-<style>
-/* ═══════════════════════════════════════════
-   ROOT VARIABLES & RESET
-═══════════════════════════════════════════ */
-:root {
-  /* Warna lebih cerah & kontras untuk infokus malam */
-  --gold:    #FFD700;
-  --gold2:   #FFE55C;
-  --gold3:   #FFF3A3;
-  --dark:    #0B2419;
-  --dark2:   #0F2F1E;
-  --dark3:   #143B26;
-  --green:   #00A83A;
-  --green2:  #00D94A;
-  --green3:  #6BFFAA;
-  --teal:    #00C4A0;
-  --teal2:   #00FFD4;
-  --red:     #CC1111;
-  --red2:    #FF3333;
-  --orange:  #FF8C00;
-  --orange2: #FFA533;
-  --text:    #FFFFFF;
-  --text2:   #D4EDD8;
-  --muted:   #7EC896;
-  --radius:  14px;
-  /* Dimensi kartu hadiah undi — dipakai untuk kalkulasi tinggi panel */
-  --prize-card-h: 112px;  /* tinggi 1 kartu landscape */
-  --prize-gap:     18px;  /* gap antar kartu di prize-grid */
-  --prize-title-h: 52px;  /* prize-frame-title row (padding atas 18px + font + padding bawah 14px) */
-  --prize-pad-bot: 22px;  /* padding bawah prize-frame */
-  /* Total viewport 3 kartu = 3×card + 2×gap */
-  --viewport-3:   calc(3 * var(--prize-card-h) + 2 * var(--prize-gap));
-  /* Total frame height = title + viewport + padding bawah */
-  --panel-h:      calc(var(--prize-title-h) + var(--viewport-3) + var(--prize-pad-bot));
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-/* Responsive touch: hilangkan 300ms tap delay di Android */
-a, button, [onclick], label, input, select, textarea {
-  touch-action: manipulation;
-}
-body {
-  font-family: 'Nunito', sans-serif;
-  background: var(--dark);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-size: 18px; /* Base font lebih besar */
-  /* Isolasi stacking context agar compositing lebih efisien */
-  isolation: isolate;
-  /* Android: cegah overscroll bounce yang memicu repaint */
-  overscroll-behavior-y: none;
-}
+// ============================================================
+//  APLIKASI UNDIAN DOORPRIZE — TAHUN BARU ISLAM
+//  Google Apps Script Backend (Kode.gs)
+//
+//  VERSI: GitHub Pages Compatible
+//  - doGet() sekarang merangkap sebagai API router
+//  - Semua request dari frontend dikirim via fetch GET
+//    dengan parameter ?fn=namaFungsi&args=[...]
+//  - Response selalu JSON dengan header CORS otomatis
+//    (GAS doGet cross-origin diizinkan oleh Google)
+// ============================================================
 
-/* ═══════════════════════════════════════════
-   ANIMATED BACKGROUND — CSS-only (no canvas loop)
-   Lebih efisien di GPU Android karena berjalan
-   di compositor thread, bukan main thread.
-═══════════════════════════════════════════ */
-#bg-canvas { display: none; } /* Canvas dinonaktifkan — diganti CSS */
+const SHEET_PESERTA   = 'Peserta';
+const SHEET_HADIAH    = 'Hadiah';
+const SHEET_PEMENANG  = 'Pemenang';
+const SHEET_SETTINGS  = 'Settings';
+const SHEET_ELIMINASI = 'Eliminasi';
 
-/* Pola geometri Islam */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .06;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23FFD700' stroke-width='0.8'%3E%3Cpolygon points='40,4 76,22 76,58 40,76 4,58 4,22'/%3E%3Cpolygon points='40,16 64,28 64,52 40,64 16,52 16,28'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 80px 80px;
-  will-change: auto;
-}
-
-/* Bintang animasi — CSS keyframe berjalan di GPU compositor */
-body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    radial-gradient(1.5px 1.5px at 15% 20%, rgba(255,215,0,.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 35% 60%, rgba(255,215,0,.5) 0%, transparent 100%),
-    radial-gradient(2px 2px at 55% 10%, rgba(255,215,0,.55) 0%, transparent 100%),
-    radial-gradient(1px 1px at 72% 45%, rgba(255,215,0,.4) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 88% 75%, rgba(255,215,0,.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 25% 85%, rgba(255,215,0,.45) 0%, transparent 100%),
-    radial-gradient(2px 2px at 65% 30%, rgba(255,215,0,.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 45% 90%, rgba(255,215,0,.35) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 5%  50%, rgba(255,215,0,.45) 0%, transparent 100%),
-    radial-gradient(1px 1px at 92% 15%, rgba(255,215,0,.4) 0%, transparent 100%);
-  animation: starDrift 30s linear infinite;
-  will-change: transform;
-}
-@keyframes starDrift {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-80px); }
-}
-
-/* ═══════════════════════════════════════════
-   LAYOUT
-═══════════════════════════════════════════ */
-#app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 20px 80px; }
-
-/* ═══════════════════════════════════════════
-   HEADER — font lebih besar & kontras
-═══════════════════════════════════════════ */
-header { text-align: center; padding: 18px 20px 24px; position: relative; }
-header h1 {
-  font-family: 'Cinzel Decorative', serif;
-  font-size: clamp(1.4rem, 4vw, 2.8rem);
-  color: var(--gold);
-  letter-spacing: .06em;
-  text-shadow: 0 0 50px rgba(255,215,0,.7), 0 2px 6px rgba(0,0,0,.8);
-  line-height: 1.3;
-}
-.header-arabic {
-  font-family: 'Amiri', serif;
-  font-size: clamp(1.2rem, 3vw, 2rem);
-  color: var(--gold2);
-  margin-top: 6px; opacity: .9;
-  display: none; /* Dihapus dari tampilan */
-}
-.header-sub {
-  color: var(--green3); font-size: clamp(1.1rem, 2.5vw, 1.6rem);
-  margin-top: 8px; font-weight: 800;
-  text-shadow: 0 0 20px rgba(107,255,170,.3);
-  letter-spacing: .03em;
-}
-#header-panitia {
-  display: inline-block; margin-top: 12px; padding: 6px 24px;
-  border: 1px solid rgba(255,215,0,.3); border-radius: 30px;
-  font-size: .95rem; color: var(--gold2); letter-spacing: .05em;
-}
-
-/* ═══════════════════════════════════════════
-   SIDE MENUS — Flyout Navigation
-═══════════════════════════════════════════ */
-.side-menu {
-  position: fixed; top: 50%; z-index: 100;
-  transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 6px;
-  transition: transform .3s cubic-bezier(.4,0,.2,1);
-}
-.side-menu.left {
-  left: 0;
-  transform: translateY(-50%) translateX(-100%);
-  padding-right: 0;
-}
-.side-menu.right {
-  right: 0;
-  transform: translateY(-50%) translateX(100%);
-  padding-left: 0;
-}
-/* Arrow tab indicators — always visible */
-.side-arrow {
-  position: fixed; top: 50%; z-index: 101;
-  transform: translateY(-50%);
-  width: 18px; height: 60px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all .3s;
-  opacity: .5;
-}
-.side-arrow:hover { opacity: 1; }
-.side-arrow.left-arrow  { left: 0; }
-.side-arrow.right-arrow { right: 0; }
-.side-arrow .arrow-icon {
-  font-size: .7rem; color: var(--gold2);
-  animation: pulseArrow 2s ease-in-out infinite;
-}
-@keyframes pulseArrow {
-  0%,100% { opacity: .4; } 50% { opacity: 1; }
-}
-/* Invisible hover trigger zone */
-.side-trigger {
-  position: fixed; top: 0; width: 32px; height: 100%; z-index: 99;
-}
-.side-trigger.left  { left: 0; }
-.side-trigger.right { right: 0; }
-.side-trigger.left:hover ~ .side-menu.left,
-.side-trigger.left:hover ~ .side-arrow.left-arrow,
-.side-menu.left:hover {
-  transform: translateY(-50%) translateX(0);
-}
-.side-trigger.right:hover ~ .side-menu.right,
-.side-trigger.right:hover ~ .side-arrow.right-arrow,
-.side-menu.right:hover {
-  transform: translateY(-50%) translateX(0);
-}
-/* Hide arrows when menu is shown */
-.side-trigger.left:hover ~ .side-arrow.left-arrow,
-.side-trigger.right:hover ~ .side-arrow.right-arrow { opacity: 0; }
-.side-menu-btn {
-  padding: 14px 18px; border: none;
-  border-radius: 0 12px 12px 0;
-  background: rgba(10,26,13,.97); border: 1px solid rgba(255,215,0,.25);
-  color: var(--gold2); font-family: 'Nunito', sans-serif;
-  font-size: .88rem; font-weight: 800; cursor: pointer;
-  transition: background .2s, color .2s; white-space: nowrap;
-  /* backdrop-filter dihapus: penyebab utama flicker di GPU Android */
-  box-shadow: 4px 0 20px rgba(0,0,0,.4);
-  display: flex; align-items: center; gap: 8px;
-}
-.side-menu.right .side-menu-btn {
-  border-radius: 12px 0 0 12px;
-  box-shadow: -4px 0 20px rgba(0,0,0,.4);
-}
-.side-menu-btn:hover {
-  background: linear-gradient(135deg, var(--green), var(--green2));
-  color: #fff; border-color: var(--green2);
-  box-shadow: 0 0 20px rgba(0,168,58,.5);
-}
-.side-menu-btn .sm-icon { font-size: 1.1rem; }
-
-/* Compact undian stats bar */
-.undian-stats-bar {
-  display: flex; gap: 10px; justify-content: center;
-  flex-wrap: wrap; padding: 8px 0; margin-top: 8px;
-}
-.undian-stat-chip {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(10,26,13,.92); border: 1px solid rgba(255,215,0,.12);
-  border-radius: 20px; padding: 4px 14px;
-  font-size: .78rem; color: var(--muted); font-weight: 700;
-  /* backdrop-filter dihapus */
-}
-.undian-stat-chip .chip-num {
-  font-weight: 900; font-size: .85rem;
-}
-.undian-stat-chip.chip-gold .chip-num  { color: var(--gold2); }
-.undian-stat-chip.chip-green .chip-num { color: var(--green3); }
-.undian-stat-chip.chip-teal .chip-num  { color: #00FFD4; }
-
-/* Overlay panels for sub-menus */
-.panel-overlay {
-  position: fixed; top: 0; bottom: 0; z-index: 200;
-  width: min(92vw, 680px);
-  background: rgba(11,36,25,.99);
-  border: 1px solid rgba(255,215,0,.2);
-  /* backdrop-filter dihapus: compositing layer mahal di Android */
-  overflow-y: auto; padding: 28px 24px;
-  transition: transform .3s cubic-bezier(.4,0,.2,1);
-  box-shadow: 0 0 60px rgba(0,0,0,.7);
-  /* Promote ke GPU layer agar slide animasi smooth */
-  will-change: transform;
-  contain: layout style;
-}
-.panel-overlay.panel-left {
-  left: 0; transform: translateX(-110%);
-  border-right: 2px solid rgba(255,215,0,.2);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-.panel-overlay.panel-right {
-  right: 0; transform: translateX(110%);
-  border-left: 2px solid rgba(255,215,0,.2);
-  border-radius: var(--radius) 0 0 var(--radius);
-}
-.panel-overlay.open { transform: translateX(0); }
-.panel-overlay-backdrop {
-  position: fixed; inset: 0; z-index: 199;
-  background: rgba(0,0,0,.6); display: none;
-  /* backdrop-filter dihapus di backdrop — tidak perlu blur di atas blur */
-}
-.panel-overlay-backdrop.show { display: block; animation: fadeUp .2s ease; }
-.panel-close {
-  position: absolute; top: 14px; right: 14px;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
-  color: var(--muted); border-radius: 8px; width: 36px; height: 36px;
-  cursor: pointer; font-size: 1.1rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.panel-close:hover { background: rgba(204,17,17,.4); color: #fff; }
-.panel-title {
-  font-size: 1.15rem; font-weight: 900; color: var(--gold2);
-  margin-bottom: 20px; padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255,215,0,.15);
-  display: flex; align-items: center; gap: 10px;
-}
-
-/* Tab panels: undian always visible, others hidden */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; animation: fadeUp .3s ease; }
-@keyframes fadeUp { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
-
-/* ═══════════════════════════════════════════
-   CARDS
-═══════════════════════════════════════════ */
-.card {
-  background: rgba(10,26,13,.92);
-  border: 1px solid rgba(255,215,0,.18);
-  border-radius: var(--radius); padding: 26px; margin-bottom: 20px;
-  /* backdrop-filter dihapus */
-  box-shadow: 0 4px 28px rgba(0,0,0,.4);
-  transition: border-color .2s;
-}
-.card:hover { border-color: rgba(255,215,0,.32); }
-.card h2 {
-  font-size: 1.1rem; font-weight: 900; color: var(--gold2);
-  margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
-}
-.card h2 .icon { font-size: 1.3rem; }
-
-/* ═══════════════════════════════════════════
-   FORMS — lebih besar
-═══════════════════════════════════════════ */
-.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-input[type=text], input[type=number], input[type=email], select, textarea {
-  background: rgba(11,36,25,.8); border: 1px solid rgba(255,215,0,.25);
-  border-radius: 8px; color: var(--text);
-  font-family: 'Nunito', sans-serif; font-size: 1rem;
-  padding: 12px 16px; outline: none; width: 100%;
-  transition: border-color .2s, box-shadow .2s;
-}
-input:focus, select:focus, textarea:focus {
-  border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,215,0,.15);
-}
-label {
-  font-size: .82rem; color: var(--muted); display: block; margin-bottom: 5px;
-  font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-}
-input::placeholder, textarea::placeholder { color: rgba(126,200,150,.4); }
-
-/* ═══════════════════════════════════════════
-   BUTTONS — semua diperbesar
-═══════════════════════════════════════════ */
-.btn {
-  padding: 12px 26px; border: none; border-radius: 8px;
-  font-family: 'Nunito', sans-serif; font-weight: 900;
-  font-size: 1rem; cursor: pointer;
-  transition: box-shadow .2s, transform .2s, background .15s;
-  display: inline-flex; align-items: center; gap: 8px;
-  position: relative; overflow: hidden; letter-spacing: .02em;
-  /* Hapus ::after overlay pseudo-element: paint mahal di Android */
-}
-/* btn::after overlay dihapus — menyebabkan repaint di setiap hover/touch */
-.btn-gold {
-  background: linear-gradient(135deg, #A87000, var(--gold), var(--gold2));
-  color: #1a0d00; box-shadow: 0 2px 20px rgba(255,215,0,.35);
-}
-.btn-gold:hover { box-shadow: 0 4px 30px rgba(255,215,0,.6); transform: translateY(-1px); }
-.btn-green {
-  background: linear-gradient(135deg, var(--green), var(--green2));
-  color: #fff; box-shadow: 0 2px 20px rgba(0,168,58,.35);
-}
-.btn-green:hover { box-shadow: 0 4px 30px rgba(0,217,74,.6); transform: translateY(-1px); }
-.btn-teal  { background: linear-gradient(135deg, var(--teal), var(--teal2)); color: #001a15; font-weight: 900; }
-.btn-red   { background: linear-gradient(135deg, var(--red), var(--red2)); color: #fff; }
-.btn-orange { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #1a0800; font-weight: 900; }
-.btn-ghost { background: transparent; border: 2px solid rgba(255,215,0,.4); color: var(--gold); }
-.btn-ghost:hover { background: rgba(255,215,0,.12); }
-.btn-dark  { background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15); color: var(--text); }
-.btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
-.btn-sm { padding: 7px 16px; font-size: .85rem; }
-.btn-lg { padding: 16px 36px; font-size: 1.1rem; }
-.btn-xl { padding: 20px 48px; font-size: 1.3rem; border-radius: 12px; }
-
-/* ═══════════════════════════════════════════
-   BADGES
-═══════════════════════════════════════════ */
-.badge {
-  display: inline-block; padding: 4px 12px; border-radius: 20px;
-  font-size: .8rem; font-weight: 900; letter-spacing: .04em;
-}
-.badge-green    { background: rgba(0,168,58,.25);  color: var(--green3); }
-.badge-gold     { background: rgba(255,215,0,.2);  color: var(--gold2); }
-.badge-muted    { background: rgba(126,200,150,.15); color: var(--muted); }
-.badge-red      { background: rgba(204,17,17,.25);  color: var(--red2); }
-.badge-teal     { background: rgba(0,196,160,.18);  color: var(--teal2); }
-.badge-orange   { background: rgba(255,140,0,.2);   color: var(--orange2); }
-
-/* ═══════════════════════════════════════════
-   TABLE — font lebih besar
-═══════════════════════════════════════════ */
-.tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid rgba(255,215,0,.12); }
-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-th {
-  background: rgba(255,215,0,.12); color: var(--gold2); padding: 12px 14px;
-  text-align: left; font-weight: 900; font-size: .82rem;
-  text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
-}
-td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,215,0,.05); }
-.empty-row td { text-align: center; color: var(--muted); padding: 36px; font-size: 1rem; }
-
-/* ═══════════════════════════════════════════
-   STAT BOXES — besar & kontras
-═══════════════════════════════════════════ */
-.stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
-.stat-box {
-  flex: 1; min-width: 120px;
-  background: rgba(10,26,13,.85); border: 1px solid rgba(255,215,0,.2);
-  border-radius: 14px; padding: 20px 14px; text-align: center;
-  transition: border-color .2s, transform .2s;
-  will-change: transform;
-}
-.stat-box:hover { border-color: rgba(255,215,0,.45); transform: translateY(-2px); }
-.stat-box .num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
-.stat-box .lbl { font-size: .8rem; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
-.stat-box.gold-stat  .num { color: var(--gold); text-shadow: 0 0 20px rgba(255,215,0,.5); }
-.stat-box.green-stat .num { color: var(--green3); text-shadow: 0 0 20px rgba(107,255,170,.4); }
-.stat-box.red-stat   .num { color: var(--red2); text-shadow: 0 0 20px rgba(255,51,51,.4); }
-.stat-box.teal-stat  .num { color: var(--teal2); text-shadow: 0 0 20px rgba(0,255,212,.3); }
-.stat-box.orange-stat .num { color: var(--orange2); text-shadow: 0 0 20px rgba(255,165,51,.4); }
-
-/* ═══════════════════════════════════════════
-   ALERT
-═══════════════════════════════════════════ */
-.alert {
-  padding: 14px 18px; border-radius: 10px; font-size: 1rem;
-  margin: 12px 0; display: none; align-items: center; gap: 12px;
-}
-.alert.show { display: flex; animation: fadeUp .2s ease; }
-.alert-success { background: rgba(0,168,58,.18); border: 1px solid rgba(0,168,58,.4); color: #6BFFAA; }
-.alert-error   { background: rgba(204,17,17,.18); border: 1px solid rgba(204,17,17,.4); color: #FF8888; }
-.alert-info    { background: rgba(255,215,0,.14); border: 1px solid rgba(255,215,0,.3); color: var(--gold2); }
-.alert-warn    { background: rgba(255,140,0,.14); border: 1px solid rgba(255,140,0,.3); color: var(--orange2); }
-
-/* ═══════════════════════════════════════════
-   LOADING OVERLAY
-═══════════════════════════════════════════ */
-#loading-overlay {
-  position: fixed; inset: 0; z-index: 9995;
-  background: rgba(11,36,25,.96);
-  /* backdrop-filter dihapus */
-  display: none; align-items: center; justify-content: center; flex-direction: column; gap: 18px;
-}
-#loading-overlay.show { display: flex; }
-.spinner {
-  width: 64px; height: 64px;
-  border: 4px solid rgba(255,215,0,.2);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin .75s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { color: var(--gold); font-size: 1.1rem; font-weight: 800; letter-spacing: .08em; }
-
-/* ═══════════════════════════════════════════
-   PROGRESS BAR
-═══════════════════════════════════════════ */
-.progress-wrap { background: rgba(255,255,255,.07); border-radius: 4px; height: 8px; overflow: hidden; margin: 10px 0; }
-.progress-bar  { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 4px; transition: width .4s ease; }
-
-/* ═══════════════════════════════════════════
-   DROP ZONE
-═══════════════════════════════════════════ */
-.drop-zone {
-  border: 2px dashed rgba(255,215,0,.3); border-radius: 14px;
-  padding: 42px 22px; text-align: center; cursor: pointer;
-  transition: all .2s; margin-bottom: 16px;
-}
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--gold); background: rgba(255,215,0,.07);
-  box-shadow: inset 0 0 40px rgba(255,215,0,.05);
-}
-.drop-zone .dz-icon { font-size: 3rem; display: block; margin-bottom: 10px; }
-.drop-zone p { color: var(--muted); font-size: 1rem; }
-.drop-zone strong { color: var(--gold2); }
-
-/* ═══════════════════════════════════════════
-   HADIAH ITEMS — List layout (untuk panel hadiah)
-═══════════════════════════════════════════ */
-.hadiah-item {
-  background: rgba(11,36,25,.7); border: 1px solid rgba(255,215,0,.15);
-  border-radius: 14px; padding: 16px 20px; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 14px;
-  transition: border-color .2s;
-}
-.hadiah-item:hover { border-color: rgba(255,215,0,.3); }
-.hadiah-num {
-  background: linear-gradient(135deg, var(--green), var(--green2));
-  color: #fff; width: 40px; height: 40px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 900; font-size: 1rem; flex-shrink: 0;
-  box-shadow: 0 0 14px rgba(0,168,58,.4);
-}
-.hadiah-info { flex: 1; min-width: 0; }
-.hadiah-info strong { font-size: 1.05rem; display: block; }
-.hadiah-info .meta { color: var(--muted); font-size: .85rem; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* ═══════════════════════════════════════════
-   UNDIAN PRIZE CARDS — Satu baris bergerak (carousel horizontal)
-═══════════════════════════════════════════ */
-.dual-prize-grid {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr);
-  gap: 22px;
-  align-items: stretch;
-  margin-bottom: 22px;
-}
-.prize-frame {
-  position: relative;
-  background: linear-gradient(180deg, rgba(20,59,38,.65), rgba(11,36,25,.65));
-  border: 1px solid rgba(255,215,0,.22);
-  border-radius: 22px;
-  padding: 18px 0 var(--prize-pad-bot);
-  display: flex; flex-direction: column;
-  height: var(--panel-h); /* = title + 3 kartu + 2 gap + padding bawah */
-  box-shadow: 0 6px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
-  /* backdrop-filter dihapus */
-}
-.prize-frame-title {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 24px 14px;
-  font-size: .92rem; font-weight: 900; color: var(--gold2);
-  text-transform: uppercase; letter-spacing: .08em;
-  flex-wrap: nowrap; /* semua dalam satu baris */
-}
-.prize-frame-title .pf-icon { font-size: 1.15rem; }
-.prize-frame-title .pf-count {
-  font-size: .78rem; font-weight: 800; letter-spacing: .03em;
-  color: var(--muted); text-transform: none;
-  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.18);
-  border-radius: 20px; padding: 3px 12px;
-  flex-shrink: 0;
-}
-.prize-frame-title .pf-spacer {
-  flex: 1; /* mendorong count & tombol ke ujung kanan */
-  min-width: 4px;
-}
-.prize-track-viewport {
-  width: 100%;
-  flex: none; /* jangan stretch — pakai height eksplisit */
-  height: var(--viewport-3); /* persis tinggi 3 kartu + 2 gap */
-  min-height: 0;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  padding: 4px 24px;
-  position: relative;
-  /* Isolasi repaint agar scroll viewport tidak trigger repaint halaman */
-  contain: layout style;
-  overscroll-behavior: none;
-}
-.prize-frame::before, .prize-frame::after {
-  content: ''; position: absolute; left: 1px; right: 1px; height: 44px;
-  z-index: 3; pointer-events: none;
-}
-.prize-frame::before {
-  top: 50px; border-radius: 22px 22px 0 0;
-  background: linear-gradient(180deg, rgba(15,47,30,.9), rgba(15,47,30,0));
-}
-.prize-frame::after {
-  bottom: 1px; border-radius: 0 0 22px 22px;
-  background: linear-gradient(0deg, rgba(15,47,30,.9), rgba(15,47,30,0));
-}
-.prize-grid {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  gap: 18px;
-  transition: transform .15s linear;
-  will-change: transform;
-}
-.prize-card {
-  background: rgba(8,20,10,.85);
-  border: 1px solid rgba(255,215,0,.18);
-  border-radius: 18px; padding: 0; overflow: hidden;
-  transition: all .25s; position: relative;
-  display: flex; flex-direction: row; align-items: stretch;
-  width: 100%;
-  height: var(--prize-card-h); /* tinggi tetap agar viewport 3-kartu akurat */
-  flex-shrink: 0;
-}
-.prize-card:hover {
-  border-color: rgba(255,215,0,.4);
-  box-shadow: 0 8px 32px rgba(255,215,0,.12);
-}
-.prize-card.done {
-  border-color: rgba(0,168,58,.3);
-  opacity: .65;
-}
-.prize-card.done:hover { opacity: .85; }
-
-/* Pita diagonal "WINNER" — menandai hadiah yang sudah dimenangkan */
-.prize-card-ribbon {
-  position: absolute; top: 0; right: 0;
-  width: 130px; height: 130px;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 6;
-}
-.prize-card-ribbon span {
-  position: absolute;
-  top: 22px; right: -40px;
-  width: 170px;
-  transform: rotate(45deg);
-  text-align: center;
-  background: linear-gradient(135deg, var(--green), var(--green2));
-  color: #fff;
-  font-size: .7rem; font-weight: 900; letter-spacing: .1em;
-  text-transform: uppercase;
-  padding: 5px 0;
-  box-shadow: 0 3px 10px rgba(0,0,0,.35);
-  border-top: 1px solid rgba(255,255,255,.35);
-  border-bottom: 1px solid rgba(0,0,0,.25);
-}
-.prize-card-ribbon span::before,
-.prize-card-ribbon span::after {
-  content: '';
-  position: absolute; top: 0; width: 0; height: 0;
-  border-style: solid;
-}
-.prize-card-ribbon span::before {
-  left: 0; border-width: 0 0 7px 7px;
-  border-color: transparent transparent #00701F transparent;
-}
-.prize-card-ribbon span::after {
-  right: 0; border-width: 0 7px 7px 0;
-  border-color: transparent #00701F transparent transparent;
-}
-.prize-card.prize-card-reeling {
-  transition: border-color .06s linear, box-shadow .06s linear;
-}
-.prize-card.prize-card-selected {
-  border-color: var(--gold);
-  box-shadow: 0 0 36px rgba(255,215,0,.5), 0 0 70px rgba(255,215,0,.18);
-  z-index: 5;
-  transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
-  transform: scale(1.02);
-}
-.prize-card.prize-card-selected .prize-card-header {
-  background: linear-gradient(135deg, rgba(255,215,0,.22), rgba(255,215,0,.06));
-}
-.prize-card.prize-card-locked {
-  opacity: .4; filter: grayscale(.3);
-  pointer-events: none;
-}
-.prize-card-header {
-  background: linear-gradient(135deg, rgba(255,215,0,.1), rgba(255,215,0,.04));
-  padding: 16px 20px; text-align: left;
-  border-right: 1px solid rgba(255,215,0,.1);
-  display: flex; flex-direction: column; justify-content: center;
-  flex: 0 0 160px; min-width: 140px;
-}
-.prize-card-rank {
-  font-size: .72rem; color: var(--muted); text-transform: uppercase;
-  letter-spacing: .1em; font-weight: 700; margin-bottom: 4px;
-}
-.prize-card-name {
-  font-size: clamp(1.05rem, 1.8vw, 1.3rem); font-weight: 900;
-  color: var(--gold); line-height: 1.2;
-}
-.prize-card-body {
-  padding: 14px 18px; flex: 1; min-width: 0;
-  display: flex; flex-direction: column; justify-content: center; gap: 8px;
-}
-.prize-card-desc {
-  font-size: .92rem; color: var(--muted); line-height: 1.4;
-}
-.prize-card-meta {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-.prize-tag {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 12px; border-radius: 16px;
-  font-size: .78rem; font-weight: 800;
-}
-.prize-tag.tag-sponsor {
-  background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.2);
-  color: var(--gold2);
-}
-.prize-tag.tag-qty {
-  background: rgba(0,168,58,.1); border: 1px solid rgba(0,168,58,.2);
-  color: var(--green3);
-}
-.prize-card-action {
-  padding: 14px 18px; flex: 0 0 auto;
-  display: flex; align-items: center;
-  border-left: 1px solid rgba(255,215,0,.08);
-}
-.prize-card-action .btn {
-  justify-content: center; white-space: nowrap;
-  padding: 11px 18px; font-size: .92rem;
-}
-.prize-card-status {
-  /* badge dipindah ke dalam .prize-card-meta — tidak lagi absolute */
-  display: inline-flex;
-}
-
-/* ═══════════════════════════════════════════
-   ══════════════════════════════════════════
-   SLOT MACHINE OVERLAY — Responsif fit layar
-   Semua elemen tampil tanpa scroll
-   ══════════════════════════════════════════
-═══════════════════════════════════════════ */
-#slot-overlay {
-  position: fixed; inset: 0; z-index: 9996;
-  background: radial-gradient(ellipse at center, #143B26 0%, #0B2419 100%);
-  display: none; align-items: center; justify-content: center;
-  flex-direction: column; gap: 12px; padding: 12px 16px;
-  /* Prevent slot overlay from triggering layout on rest of page */
-  contain: layout style;
-}
-#slot-overlay.show { display: flex; }
-
-/* Header slot */
-.slot-header { text-align: center; flex-shrink: 0; }
-#slot-hadiah-label {
-  font-size: clamp(1.4rem, 4vw, 3rem);
-  color: var(--green3); font-weight: 800; letter-spacing: .1em;
-  text-transform: uppercase; margin-bottom: 4px;
-  text-shadow: 0 0 30px rgba(107,255,170,.6);
-}
-#slot-title {
-  font-family: 'Cinzel Decorative', serif;
-  font-size: clamp(0.7rem, 1.5vw, 1rem);
-  color: var(--gold); opacity: .6;
-  text-shadow: 0 0 40px rgba(255,215,0,.4);
-  line-height: 1.2;
-}
-
-/* Kotak mesin slot utama — fit layar */
-.slot-machine-wrap {
-  background: rgba(10,26,13,.98);
-  border: 3px solid var(--gold);
-  border-radius: 20px; padding: clamp(14px, 2.5vw, 32px) clamp(20px, 4vw, 60px);
-  text-align: center; width: min(94vw, 860px);
-  /* Sederhanakan dari 3 layer shadow → 1: lebih ringan di GPU Android */
-  box-shadow: 0 0 60px rgba(255,215,0,.18), inset 0 0 40px rgba(0,0,0,.6);
-  position: relative; overflow: hidden; flex-shrink: 1;
-  contain: layout style;
-}
-.slot-machine-wrap::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.1) 0%, transparent 55%);
-}
-
-/* Label indeks pemenang — hidden by default, shown only on reveal */
-#slot-index-label {
-  font-size: clamp(0.8rem, 1.8vw, 1.2rem);
-  color: var(--muted); letter-spacing: .08em;
-  text-transform: uppercase; margin-bottom: 6px; font-weight: 700;
-  display: none;
-}
-
-/* Nomor KK — diperkecil, bukan prioritas visual */
-#slot-kk {
-  font-family: 'Courier New', monospace;
-  font-size: clamp(1.2rem, 3vw, 2.2rem);
-  color: var(--gold2); letter-spacing: .1em;
-  min-height: 1.2em; line-height: 1.1;
-  text-shadow:
-    0 0 30px rgba(255,229,92,.5),
-    0 0 60px rgba(255,215,0,.2);
-  transition: color .08s; opacity: .85;
-}
-#slot-kk.final {
-  color: #fff; opacity: 1;
-  text-shadow:
-    0 0 40px rgba(255,255,255,.5),
-    0 0 80px rgba(255,215,0,.3);
-  animation: pulseKK .5s ease;
-}
-@keyframes pulseKK { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-
-/* Nama pemenang — PRIORITAS BESAR */
-#slot-nama {
-  font-size: clamp(2rem, 5.5vw, 5rem);
-  color: #fff; font-weight: 900; margin-top: 8px; min-height: 1.1em;
-  /* Sederhanakan text-shadow: 1 layer cukup, 2 layer mahal saat text berganti cepat */
-  text-shadow: 0 2px 8px rgba(0,0,0,.8);
-  line-height: 1.15;
-}
-/* Kelurahan/Alamat — cukup besar */
-#slot-kel {
-  font-size: clamp(1.1rem, 3vw, 2.2rem);
-  color: var(--green3); margin-top: 6px;
-  font-weight: 700; text-shadow: 0 0 20px rgba(107,255,170,.4);
-}
-#slot-sisa {
-  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
-  color: var(--muted); margin-top: 8px; font-weight: 600;
-}
-
-/* ─── STOP MANUAL BUTTON ─── */
-#btn-stop-manual {
-  font-size: clamp(1.1rem, 2.8vw, 1.8rem);
-  padding: clamp(10px, 2vw, 20px) clamp(30px, 6vw, 70px);
-  border-radius: 14px; flex-shrink: 0;
-  animation: pulseStop 1.2s ease-in-out infinite;
-  box-shadow: 0 0 40px rgba(255,140,0,.6), 0 0 80px rgba(255,140,0,.3);
-  letter-spacing: .06em;
-}
-@keyframes pulseStop {
-  0%,100% { box-shadow: 0 0 30px rgba(255,140,0,.5), 0 0 60px rgba(255,140,0,.25); transform: scale(1); }
-  50%      { box-shadow: 0 0 60px rgba(255,140,0,.8), 0 0 120px rgba(255,140,0,.4); transform: scale(1.04); }
-}
-
-/* Keterangan stop manual */
-#slot-stop-info {
-  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
-  color: rgba(255,165,51,.8); text-align: center;
-  font-style: italic; margin-top: -4px; flex-shrink: 0;
-}
-
-/* Tombol-tombol aksi slot */
-.slot-actions {
-  display: flex; gap: 10px; flex-wrap: wrap;
-  justify-content: center; margin-top: 4px; flex-shrink: 0;
-}
-.slot-close {
-  position: absolute; top: 12px; right: 12px;
-  background: rgba(255,255,255,.1); border: none; color: var(--muted);
-  border-radius: 8px; width: 32px; height: 32px;
-  cursor: pointer; font-size: 1rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.slot-close:hover { background: rgba(204,17,17,.4); color: #fff; }
-
-/* Multi-pemenang list di slot */
-.multi-list { max-height: 180px; overflow-y: auto; margin: 8px 0; }
-.multi-item {
-  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.18);
-  border-radius: 8px; padding: 6px 12px; margin-bottom: 6px;
-  display: flex; align-items: center; gap: 10px;
-}
-.multi-item .mkk { font-family: 'Courier New',monospace; font-size: clamp(0.85rem, 1.8vw, 1.2rem); color: var(--gold2); flex: 1; }
-.multi-item .mnm { font-size: clamp(0.85rem, 1.8vw, 1.2rem); font-weight: 800; }
-
-/* Fullscreen overlay removed — not used */
-
-/* ═══════════════════════════════════════════
-   CONFETTI
-═══════════════════════════════════════════ */
-#confetti-box { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9998; }
-.confetti-piece {
-  position: absolute; top: -20px;
-  animation: confettiFall linear forwards;
-  border-radius: 3px;
-}
-@keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-
-/* ═══════════════════════════════════════════
-   INFO BOX PERMANEN — Notifikasi aturan baru
-═══════════════════════════════════════════ */
-.info-rule {
-  background: rgba(255,140,0,.12); border: 1px solid rgba(255,140,0,.3);
-  border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
-  font-size: .95rem; color: var(--orange2); display: flex; gap: 12px; align-items: flex-start;
-}
-.info-rule .icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
-
-/* ═══════════════════════════════════════════
-   SETTINGS TAB
-═══════════════════════════════════════════ */
-.settings-section { margin-bottom: 22px; }
-.settings-section h3 {
-  font-size: .9rem; color: var(--gold2); font-weight: 800; margin-bottom: 14px;
-  text-transform: uppercase; letter-spacing: .07em;
-  padding-bottom: 9px; border-bottom: 1px solid rgba(255,215,0,.12);
-}
-
-/* ═══════════════════════════════════════════
-   SIAP UNDI — Tombol diperkecil, inline di header panel kanan
-═══════════════════════════════════════════ */
-.siap-undi-wrap {
-  /* wrap tidak lagi digunakan sebagai footer panel — hapus margin/padding lama */
-  display: none;
-}
-.btn-siap-undi-inline {
-  background: linear-gradient(135deg, #7B2FF7, #C850C0, #FF6B6B);
-  color: #fff; border: none; padding: 5px 14px; border-radius: 10px;
-  font-family: 'Nunito', sans-serif; font-weight: 900; font-size: .78rem;
-  cursor: pointer; transition: all .25s;
-  box-shadow: 0 2px 12px rgba(200,80,192,.3);
-  display: inline-flex; align-items: center; gap: 6px;
-  white-space: nowrap; flex-shrink: 0;
-  animation: shimmerAcak 3s ease-in-out infinite;
-}
-@keyframes shimmerAcak {
-  0%,100% { box-shadow: 0 2px 12px rgba(200,80,192,.3); }
-  50%     { box-shadow: 0 2px 20px rgba(123,47,247,.45), 0 0 28px rgba(255,107,107,.15); }
-}
-.btn-siap-undi-inline:hover {
-  transform: translateY(-1px) scale(1.04);
-  box-shadow: 0 4px 20px rgba(200,80,192,.5);
-}
-.btn-siap-undi-inline:disabled {
-  opacity: .5; cursor: not-allowed; transform: none; animation: none;
-}
-
-/* ═══════════════════════════════════════════
-   GRAND PRIZE — Hadiah Utama (sorotan terpisah)
-   Tidak ikut "Siap Undi" / track acak hadiah biasa.
-   Terkunci sampai semua hadiah biasa berstatus Selesai.
-═══════════════════════════════════════════ */
-.grand-frame {
-  position: relative;
-  background: linear-gradient(180deg, rgba(255,215,0,.10), rgba(20,59,38,.65) 40%, rgba(11,36,25,.7));
-  border: 2px solid rgba(255,215,0,.45);
-  border-radius: 24px;
-  padding: 22px 22px 22px;
-  display: flex; flex-direction: column;
-  height: var(--panel-h); /* sejajar dengan prize-frame */
-  box-shadow: 0 0 50px rgba(255,215,0,.12), 0 8px 36px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
-  /* backdrop-filter dihapus */
-}
-.grand-frame::before {
-  content: '';
-  position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.14) 0%, transparent 60%);
-}
-.grand-frame-title {
-  display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
-  margin-bottom: 16px; flex: 0 0 auto;
-  font-family: 'Cinzel Decorative', serif;
-  font-size: clamp(1.05rem, 2.6vw, 1.5rem);
-  color: var(--gold);
-  text-shadow: 0 0 30px rgba(255,215,0,.5);
-  letter-spacing: .05em;
-}
-.grand-frame-title .gf-icon { font-size: 1.2em; }
-.grand-frame-title .gf-count {
-  margin-left: auto;  /* dorong ke kanan, tombol tepat di sebelahnya */
-  font-family: 'Nunito', sans-serif;
-  font-size: .78rem; font-weight: 800; letter-spacing: .03em;
-  color: var(--muted); text-transform: none;
-  background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.22);
-  border-radius: 20px; padding: 4px 14px;
-  flex-shrink: 0;
-}
-.grand-lock-note {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,140,0,.1); border: 1px solid rgba(255,140,0,.28);
-  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; flex: 0 0 auto;
-  font-size: .87rem; color: var(--orange2); font-weight: 700;
-}
-#grand-list {
-  flex: 1; min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,215,0,.3) transparent;
-}
-#grand-list::-webkit-scrollbar { width: 6px; }
-#grand-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 4px; }
-.grand-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.grand-card {
-  background: rgba(8,20,10,.88);
-  border: 2px solid rgba(255,215,0,.35);
-  border-radius: 18px; overflow: hidden; position: relative;
-  display: flex; flex-direction: column;
-  transition: all .25s;
-  box-shadow: 0 0 0 rgba(255,215,0,0);
-}
-.grand-card:not(.grand-locked):not(.done):hover {
-  border-color: var(--gold);
-  box-shadow: 0 8px 28px rgba(255,215,0,.18);
-}
-.grand-card.grand-locked { opacity: .55; filter: grayscale(.25); }
-.grand-card.done { border-color: rgba(0,168,58,.4); opacity: .75; }
-.grand-card-star {
-  position: absolute; top: 12px; left: 12px; z-index: 2;
-  font-size: 1.15rem; filter: drop-shadow(0 0 8px rgba(255,215,0,.7));
-}
-.grand-card-header {
-  background: linear-gradient(135deg, rgba(255,215,0,.16), rgba(255,215,0,.04));
-  padding: 20px 18px 12px; text-align: center;
-  border-bottom: 1px solid rgba(255,215,0,.16);
-}
-.grand-card-rank {
-  font-size: .74rem; color: var(--gold2); text-transform: uppercase;
-  letter-spacing: .12em; font-weight: 900; margin-bottom: 6px;
-}
-.grand-card-name {
-  font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 900;
-  color: var(--gold); line-height: 1.2;
-  text-shadow: 0 0 20px rgba(255,215,0,.3);
-}
-.grand-card-body {
-  padding: 14px 18px 14px; flex: 1;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.grand-card-desc { font-size: .9rem; color: var(--muted); line-height: 1.4; }
-.grand-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.grand-card-action { padding: 0 18px 18px; margin-top: auto; }
-.grand-card-action .btn { width: 100%; justify-content: center; padding: 12px 14px; font-size: .94rem; }
-.grand-card-action .btn-locked-note {
-  font-size: .75rem; color: var(--muted); text-align: center; margin-top: 8px;
-}
-.grand-card-ribbon {
-  position: absolute; top: 0; right: 0; width: 130px; height: 130px;
-  overflow: hidden; pointer-events: none; z-index: 6;
-}
-.grand-card-ribbon span {
-  position: absolute; top: 22px; right: -40px; width: 170px;
-  transform: rotate(45deg); text-align: center;
-  background: linear-gradient(135deg, var(--green), var(--green2));
-  color: #fff; font-size: .7rem; font-weight: 900; letter-spacing: .1em;
-  text-transform: uppercase; padding: 5px 0;
-  box-shadow: 0 3px 10px rgba(0,0,0,.35);
-  border-top: 1px solid rgba(255,255,255,.35);
-  border-bottom: 1px solid rgba(0,0,0,.25);
-}
-.toggle-utama-wrap {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,215,0,.06); border: 1px solid rgba(255,215,0,.2);
-  border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
-}
-.toggle-utama-wrap input[type=checkbox] {
-  width: 20px; height: 20px; accent-color: var(--gold); cursor: pointer;
-}
-.toggle-utama-wrap label {
-  margin: 0; cursor: pointer; text-transform: none; letter-spacing: 0;
-  font-size: .95rem; color: var(--gold2); font-weight: 800;
-}
-
-/* ═══════════════════════════════════════════
-   GRAND PRIZE — Vertical Marquee Scroll + Zoom
-═══════════════════════════════════════════ */
-/* Toggle button — inline di grand-frame-title */
-.btn-grand-marquee-toggle {
-  background: rgba(255,215,0,.1);
-  border: 1px solid rgba(255,215,0,.3);
-  color: var(--gold2);
-  border-radius: 8px;
-  padding: 4px 12px;
-  font-family: 'Nunito', sans-serif;
-  font-size: .72rem; font-weight: 900;
-  cursor: pointer; transition: all .2s;
-  display: inline-flex; align-items: center; gap: 5px;
-  white-space: nowrap; flex-shrink: 0;
-  letter-spacing: .03em;
-}
-.btn-grand-marquee-toggle:hover {
-  background: rgba(255,215,0,.2);
-  border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(255,215,0,.25);
-}
-.btn-grand-marquee-toggle.active {
-  background: linear-gradient(135deg, rgba(255,215,0,.25), rgba(255,140,0,.15));
-  border-color: var(--gold);
-  color: var(--gold);
-  box-shadow: 0 0 14px rgba(255,215,0,.3);
-  animation: pulseToggle 2.5s ease-in-out infinite;
-}
-@keyframes pulseToggle {
-  0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.25); }
-  50%     { box-shadow: 0 0 22px rgba(255,215,0,.5); }
-}
-
-/* Viewport untuk grand marquee */
-#grand-list {
-  flex: 1; min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,215,0,.3) transparent;
-  position: relative; /* diperlukan untuk mode marquee */
-  transition: overflow .2s;
-}
-#grand-list.marquee-mode {
-  overflow-y: hidden; /* sembunyikan scrollbar saat marquee aktif */
-}
-#grand-list::-webkit-scrollbar { width: 6px; }
-#grand-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 4px; }
-
-/* Kontainer dalam yang menggerakkan kartu */
-.grand-marquee-track {
-  display: flex;
-  flex-direction: column;
-  /* tidak ada gap di sini — gap sudah ditangani oleh .grand-grid di dalamnya */
-  will-change: transform;
-}
-
-/* Zoom-pulse saat kartu berhenti di tengah viewport */
-@keyframes grandCardZoom {
-  0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
-  40%  { transform: scale(1.045); box-shadow: 0 0 32px rgba(255,215,0,.35), 0 0 60px rgba(255,215,0,.15); }
-  70%  { transform: scale(1.025); }
-  100% { transform: scale(1);    box-shadow: 0 0 0 rgba(255,215,0,0); }
-}
-.grand-card.marquee-spotlight {
-  animation: grandCardZoom .7s cubic-bezier(.22,1,.36,1) forwards;
-  border-color: var(--gold) !important;
-  z-index: 2;
-}
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
-@media (max-width: 900px) {
-  .dual-prize-grid { grid-template-columns: 1fr; }
-  /* Di layar sempit, turunkan tinggi kartu agar 3 kartu tidak terlalu panjang */
-  :root {
-    --prize-card-h: 96px;
-    --prize-title-h: 50px;
+// ------------------------------------------------------------
+// ENTRY POINT — merangkap router API
+// Jika ada parameter ?fn=... → jalankan sebagai API call
+// Jika tidak ada parameter   → kembalikan HTML (tidak dipakai
+//   lagi sejak pindah ke GitHub Pages, tapi tetap aman)
+// ------------------------------------------------------------
+function doGet(e) {
+  // Jika ada parameter fn → ini adalah API call dari GitHub Pages
+  if (e && e.parameter && e.parameter.fn) {
+    return handleApiCall(e);
   }
-}
-@media (max-width: 700px) {
-  .card { padding: 18px; }
-  .form-row { flex-direction: column; }
-  .stats-row { gap: 10px; }
-  .side-trigger { width: 18px; }
-  .slot-machine-wrap { padding: 14px 10px; }
-  #slot-hadiah-label { font-size: clamp(0.9rem, 5vw, 1.3rem); }
-  #slot-kk { font-size: clamp(0.95rem, 4vw, 1.4rem); letter-spacing: .04em; }
-  #slot-nama { font-size: clamp(1.4rem, 8vw, 2.8rem); }
-  #slot-kel  { font-size: clamp(0.9rem, 5vw, 1.5rem); }
-  #btn-stop-manual { font-size: clamp(0.9rem, 5vw, 1.3rem); padding: 10px 30px; }
-  .side-menu-btn { font-size: .78rem; padding: 10px 12px; }
-  .panel-overlay { width: 92vw; padding: 18px 14px; }
-  .grand-frame { padding: 16px 14px 18px; }
-  /* Kartu jadi kolom di mobile — tinggi auto, viewport dibebaskan */
-  .prize-card { flex-direction: column; height: auto; }
-  .prize-card-header { border-right: none; border-bottom: 1px solid rgba(255,215,0,.1); flex: 0 0 auto; }
-  .prize-card-action { border-left: none; border-top: 1px solid rgba(255,215,0,.08); }
-  .btn-siap-undi-inline { font-size: .72rem; padding: 4px 10px; }
-  /* Di mobile kolom-kartu lebih tinggi — bebaskan viewport dari constraint */
-  .prize-track-viewport { height: 320px; }
-  .prize-frame, .grand-frame { height: auto; min-height: 360px; }
+
+  // Fallback: kembalikan halaman HTML (untuk akses langsung via GAS URL)
+  // Anda bisa hapus blok ini jika tidak diperlukan
+  return HtmlService
+    .createHtmlOutput('<p style="font-family:sans-serif;padding:40px">API aktif. Akses aplikasi via GitHub Pages.</p>')
+    .setTitle('Undian Doorprize API')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/* ═══════════════════════════════════════════
-   REDUCED MOTION — Android low-power / accessibility
-═══════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
-  body::after { animation: none; }
-}
-/* Nonaktifkan infinite pulse animation di layar sentuh saat tidak ada hover */
-@media (hover: none) and (pointer: coarse) {
-  .btn-siap-undi-inline { animation: none; }
-  @keyframes pulseArrow { 0%,100% { opacity: .6; } }
-  @keyframes pulseStop  { 0%,100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,140,0,.5); } }
-  @keyframes shimmerAcak { 0%,100% { box-shadow: 0 2px 12px rgba(200,80,192,.3); } }
-  @keyframes pulseToggle { 0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.25); } }
-}
-
-/* ═══════════════════════════════════════════
-   PRINT
-═══════════════════════════════════════════ */
-@media print {
-  body { background: #fff; color: #000; }
-  #app { max-width: 100%; }
-  .side-menu, .side-trigger, .btn, header { display: none; }
-  .tab-panel { display: block !important; }
-  table { font-size: 10pt; }
-}
-
-/* ─── TOAST ─────────────────────────────── */
-#toast-container {
-  position: fixed; bottom: 28px; right: 28px; z-index: 10000;
-  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-}
-.toast {
-  background: rgba(10,26,13,.97); border: 1px solid rgba(255,215,0,.35);
-  border-radius: 12px; padding: 14px 22px; font-size: 1rem; color: var(--text);
-  pointer-events: all; animation: toastIn .3s ease;
-  box-shadow: 0 4px 24px rgba(0,0,0,.5); max-width: 360px;
-  display: flex; align-items: center; gap: 12px; font-weight: 700;
-}
-.toast.removing { animation: toastOut .3s ease forwards; }
-@keyframes toastIn  { from { opacity:0; transform:translateX(24px);} to { opacity:1; transform:none;} }
-@keyframes toastOut { to   { opacity:0; transform:translateX(24px);} }
-</style>
-</head>
-<body>
-<canvas id="bg-canvas"></canvas>
-<div id="confetti-box"></div>
-<div id="toast-container"></div>
-
-<!-- LOADING -->
-<div id="loading-overlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">MEMPROSES...</div>
-</div>
-
-<!-- ═══════════════════════════════════════
-     SLOT MACHINE OVERLAY (TAMPILAN ACAK)
-     Diperbesar ±3× untuk infokus / layar besar
-════════════════════════════════════════ -->
-<div id="slot-overlay">
-  <button class="slot-close" onclick="tutupSlot()" title="Tutup">✕</button>
-  <div class="slot-header">
-    <div id="slot-hadiah-label">🎁 Hadiah</div>
-    <div id="slot-title">PENGUNDIAN DOORPRIZE</div>
-  </div>
-  <div class="slot-machine-wrap">
-    <div id="slot-index-label"></div>
-    <div id="slot-kk">• • • •  • • • •  • • • •  • • • •</div>
-    <div id="slot-nama"></div>
-    <div id="slot-kel"></div>
-    <div id="slot-sisa"></div>
-    <div id="slot-multi-list" class="multi-list" style="display:none"></div>
-  </div>
-  <button id="btn-stop-manual" class="btn btn-orange" onclick="stopManual()" style="display:none">
-    🛑 STOP
-  </button>
-  <p id="slot-stop-info" style="display:none"></p>
-  <div class="slot-actions" id="slot-actions"></div>
-</div>
-
-<!-- ═══════════════════════════════════════
-     MAIN APP
-════════════════════════════════════════ -->
-<div id="app">
-  <header>
-    <h1 id="h-nama-acara">Undian Doorprize — Tahun Baru Islam</h1>
-    <div class="header-arabic" id="h-tahun">مُحَرَّم ١٤٤٧ هـ</div>
-    <div class="header-sub" id="h-tema">Hijrah Menuju Kebaikan</div>
-    <div id="header-panitia">—</div>
-  </header>
-
-  <!-- ════════ TAB PESERTA ════════ -->
-  <div id="tab-peserta" class="tab-panel">
-    <div class="stats-row">
-      <div class="stat-box gold-stat"><div class="num" id="s-total">0</div><div class="lbl">Total Peserta</div></div>
-      <div class="stat-box green-stat"><div class="num" id="s-aktif">0</div><div class="lbl">Sisa Pool</div></div>
-      <div class="stat-box teal-stat"><div class="num" id="s-menang">0</div><div class="lbl">Sudah Terpilih</div></div>
-      <div class="stat-box red-stat"><div class="num" id="s-sisa">0</div><div class="lbl">Belum Undi</div></div>
-    </div>
-
-    <div class="info-rule">
-      <span class="icon">⚠️</span>
-      <div><strong>Aturan:</strong> Peserta yang <strong>hadir</strong> menjadi pemenang sah. Peserta yang <strong>tidak hadir</strong> akan dieliminasi dari undian selanjutnya, dan hadiah tersebut <strong>bisa diundi ulang</strong>. Reset melalui menu Pengaturan untuk mengembalikan semua ke awal.</div>
-    </div>
-
-    <!-- Upload -->
-    <div class="card">
-      <h2><span class="icon">📤</span> Upload Data Peserta</h2>
-      <div class="drop-zone" id="drop-zone"
-           onclick="document.getElementById('file-input').click()"
-           ondragover="event.preventDefault();this.classList.add('dragover')"
-           ondragleave="this.classList.remove('dragover')"
-           ondrop="handleDrop(event)">
-        <span class="dz-icon">📂</span>
-        <p>Klik atau <strong>drag & drop</strong> file CSV di sini</p>
-        <p style="font-size:.85rem;margin-top:8px;color:var(--muted)">
-          Format kolom: <strong style="color:var(--gold2)">No KK | Nama | Kelurahan | RT | RW</strong>
-        </p>
-        <p style="font-size:.8rem;margin-top:5px;color:var(--muted)">No KK harus 16 digit angka</p>
-      </div>
-      <input type="file" id="file-input" accept=".csv" style="display:none" onchange="handleFileUpload(event)">
-      <div id="upload-progress" style="display:none">
-        <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
-        <p style="font-size:.85rem;color:var(--muted);margin-top:5px" id="progress-text">Memproses...</p>
-      </div>
-      <div id="alert-upload" class="alert"></div>
-    </div>
-
-    <!-- Tambah Manual -->
-    <div class="card">
-      <h2><span class="icon">➕</span> Tambah Peserta Manual</h2>
-      <div class="form-row">
-        <div style="flex:2"><label>Nomor KK (16 digit)</label><input type="text" id="inp-kk" placeholder="3201 2345 6789 0001" maxlength="20" oninput="formatKKInput(this)"></div>
-        <div style="flex:2"><label>Nama Kepala Keluarga</label><input type="text" id="inp-nama" placeholder="Ahmad Sulaiman"></div>
-        <div style="flex:1.5"><label>Kelurahan / Desa</label><input type="text" id="inp-kel" placeholder="Kel. Sukamaju"></div>
-        <div style="flex:.8"><label>RT</label><input type="text" id="inp-rt" placeholder="001"></div>
-        <div style="flex:.8"><label>RW</label><input type="text" id="inp-rw" placeholder="005"></div>
-      </div>
-      <button class="btn btn-gold" onclick="tambahManual()">➕ Tambah Peserta</button>
-      <div id="alert-manual" class="alert" style="margin-top:12px"></div>
-    </div>
-
-    <!-- Daftar Peserta -->
-    <div class="card">
-      <h2><span class="icon">👥</span> Daftar Peserta
-        <div style="margin-left:auto;display:flex;gap:10px">
-          <button class="btn btn-ghost btn-sm" onclick="loadPeserta()">↻ Refresh</button>
-          <button class="btn btn-red btn-sm" onclick="hapusSemuaKonfirmasi()">🗑 Hapus Semua</button>
-        </div>
-      </h2>
-      <div class="form-row" style="margin-bottom:16px">
-        <input type="text" id="search-peserta" placeholder="🔍  Cari No KK, nama, atau kelurahan..." oninput="filterPeserta()">
-      </div>
-      <div class="tbl-wrap">
-        <table id="tbl-peserta">
-          <thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>RT/RW</th><th>Aksi</th></tr></thead>
-          <tbody id="tbody-peserta">
-            <tr class="empty-row"><td colspan="6">Belum ada data. Upload CSV atau tambah manual.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="font-size:.85rem;color:var(--muted);margin-top:10px">Menampilkan <span id="count-display">0</span> peserta</p>
-    </div>
-  </div>
-
-  <!-- ════════ TAB HADIAH ════════ -->
-  <div id="tab-hadiah" class="tab-panel">
-    <div class="card">
-      <h2><span class="icon">🎁</span> Kelola Hadiah</h2>
-      <p style="font-size:.9rem;color:var(--muted);margin-bottom:18px">Urutan undian: hadiah kecil lebih dulu, hadiah utama paling akhir. Klik <strong style="color:var(--gold2)">Simpan Semua</strong> setelah selesai.</p>
-      <div id="hadiah-list"></div>
-      <div style="background:rgba(11,36,25,.6);border:1px dashed rgba(255,215,0,.22);border-radius:14px;padding:18px;margin-top:12px">
-        <p style="font-size:.9rem;color:var(--gold2);font-weight:800;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">➕ Tambah Hadiah Baru</p>
-        <div class="form-row">
-          <div style="flex:2"><label>Nama Hadiah</label><input type="text" id="inp-h-nama" placeholder="Kulkas 2 Pintu"></div>
-          <div style="flex:2"><label>Deskripsi (opsional)</label><input type="text" id="inp-h-desc" placeholder="Sharp 150 Liter"></div>
-          <div style="flex:1.5"><label>Sponsor / Donatur</label><input type="text" id="inp-h-sponsor" placeholder="Bapak Ahmad"></div>
-          <div style="flex:.8"><label>Jml Pemenang</label><input type="number" id="inp-h-jml" value="1" min="1" max="100"></div>
-        </div>
-        <div class="toggle-utama-wrap">
-          <input type="checkbox" id="inp-h-utama">
-          <label for="inp-h-utama">🌟 Jadikan Hadiah Utama (Grand Prize) — tampil terpisah &amp; terkunci sampai semua hadiah biasa selesai diundi</label>
-        </div>
-        <button class="btn btn-gold" onclick="tambahHadiah()">+ Tambah ke Daftar</button>
-      </div>
-      <div id="alert-hadiah" class="alert"></div>
-      <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-green btn-lg" onclick="simpanSemuaHadiah()">💾 Simpan Semua Hadiah ke Sheet</button>
-        <button class="btn btn-ghost" onclick="loadHadiah()">↻ Reload dari Sheet</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════ TAB UNDIAN (MAIN VIEW) ════════ -->
-  <div id="tab-undian" class="tab-panel active">
-
-    <h2 style="text-align:center;font-family:'Cinzel Decorative',serif;font-size:clamp(1.3rem,3.5vw,2.4rem);color:var(--gold);margin:0 0 16px;text-shadow:0 0 40px rgba(255,215,0,.5);letter-spacing:.05em">Hadiah Doorprize</h2>
-
-    <div class="dual-prize-grid">
-      <!-- ═══ KOLOM KIRI: HADIAH UTAMA (GRAND PRIZE) ═══ -->
-      <div class="grand-frame" id="grand-frame">
-        <div class="grand-frame-title">
-          <span class="gf-icon">⭐</span> Hadiah Utama
-          <span class="gf-count" id="gf-count">0 hadiah</span>
-          <button class="btn-grand-marquee-toggle" id="btn-grand-marquee" onclick="toggleGrandMarquee()" title="Aktifkan/nonaktifkan animasi hadiah bergerak">▶ Animasi</button>
-        </div>
-        <div id="grand-lock-note" class="grand-lock-note" style="display:none">
-          <span>🔒</span>
-          <span>Hadiah Utama terkunci — selesaikan semua hadiah biasa terlebih dahulu sebelum mengundi Hadiah Utama.</span>
-        </div>
-        <div id="grand-list">
-          <p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>
-        </div>
-      </div>
-
-      <!-- ═══ KOLOM KANAN: HADIAH UNDI (BIASA) ═══ -->
-      <div class="prize-frame">
-        <div class="prize-frame-title">
-          <span class="pf-icon">🎁</span> Daftar Hadiah Undi
-          <span class="pf-spacer"></span>
-          <span class="pf-count" id="pf-count">0 hadiah</span>
-          <button class="btn-siap-undi-inline" id="btn-siap-undi" onclick="siapUndi()" title="Acak hadiah mana yang akan diundi untuk peserta">🎯 Siap Undi</button>
-        </div>
-        <div class="prize-track-viewport" id="prize-track-viewport">
-          <div id="undian-list">
-            <p style="color:var(--muted);text-align:center;padding:36px;font-size:1.05rem">Belum ada hadiah. Buka menu Hadiah untuk menambahkan.</p>
-          </div>
-        </div>
-        <!-- Siap Undi (lama) — disembunyikan, diganti inline di header -->
-        <div class="siap-undi-wrap" style="display:none">
-          <button class="btn-acak-hadiah" title="hidden">🎯 Siap Undi</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2><span class="icon">🏆</span> Pemenang Sesi Ini
-        <button class="btn btn-ghost btn-sm" onclick="loadRekap()" style="margin-left:auto">↻ Refresh</button>
-      </h2>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Hadiah</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>Status</th><th>Aksi</th></tr></thead>
-          <tbody id="tbody-pemenang-today"><tr class="empty-row"><td colspan="7">Belum ada pemenang.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="undian-stats-bar">
-      <div class="undian-stat-chip chip-gold"><span class="chip-num" id="u-pool">0</span> Sisa Undian</div>
-      <div class="undian-stat-chip chip-green"><span class="chip-num" id="u-selesai">0</span> Hadiah Selesai</div>
-      <div class="undian-stat-chip chip-teal"><span class="chip-num" id="u-hadir">0</span> Hadir</div>
-    </div>
-  </div>
-
-  <!-- ════════ TAB REKAP ════════ -->
-  <div id="tab-rekap" class="tab-panel">
-    <div class="card">
-      <h2><span class="icon">📋</span> Rekap Seluruh Pemenang</h2>
-      <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
-        <button class="btn btn-gold" onclick="loadRekap()">↻ Refresh</button>
-        <button class="btn btn-green" onclick="exportCSV()">⬇ Export CSV</button>
-        <button class="btn btn-teal" onclick="printRekap()">🖨 Print</button>
-      </div>
-      <div id="rekap-per-hadiah"></div>
-    </div>
-  </div>
-
-  <!-- ════════ TAB SETTINGS ════════ -->
-  <div id="tab-settings" class="tab-panel">
-    <div class="card">
-      <h2><span class="icon">⚙️</span> Pengaturan Acara</h2>
-      <div class="settings-section">
-        <h3>🌙 Identitas Acara</h3>
-        <div class="form-row">
-          <div style="flex:2"><label>Nama Acara</label><input type="text" id="set-nama-acara" placeholder="Perayaan Tahun Baru Islam 1447 H"></div>
-          <div style="flex:1"><label>Tahun Hijriah</label><input type="text" id="set-tahun" placeholder="1447 H"></div>
-        </div>
-        <div class="form-row">
-          <div style="flex:2"><label>Nama Panitia</label><input type="text" id="set-panitia" placeholder="Panitia Muharram DKM Al-Ikhlas"></div>
-          <div style="flex:2"><label>Nama Organisasi</label><input type="text" id="set-org" placeholder="DKM Al-Ikhlas Kel. Sukamaju"></div>
-        </div>
-        <div class="form-row">
-          <div style="flex:2"><label>Lokasi Acara</label><input type="text" id="set-lokasi" placeholder="Aula Kelurahan Sukamaju"></div>
-          <div style="flex:2"><label>Tema Acara</label><input type="text" id="set-tema" placeholder="Hijrah Menuju Kebaikan"></div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-green btn-lg" onclick="simpanSettings()">💾 Simpan Pengaturan</button>
-        <button class="btn btn-ghost" onclick="loadSettings()">↻ Reset</button>
-      </div>
-      <div id="alert-settings" class="alert" style="margin-top:14px"></div>
-    </div>
-
-    <!-- Danger Zone -->
-    <div class="card" style="border-color:rgba(204,17,17,.3)">
-      <h2 style="color:var(--red2)"><span class="icon">⚠️</span> Danger Zone</h2>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-dark" onclick="resetPemenangKonfirmasi()">🔄 Reset Pemenang Saja</button>
-        <button class="btn btn-red" onclick="resetSemuaKonfirmasi()">💥 Reset SEMUA Data</button>
-      </div>
-      <p style="font-size:.85rem;color:var(--muted);margin-top:12px">⚠ Reset tidak bisa dibatalkan. Pastikan sudah export rekap terlebih dahulu.</p>
-    </div>
-  </div>
-
-</div><!-- #app -->
-
-<!-- ════════ SIDE MENUS ════════ -->
-<div class="side-trigger left"></div>
-<div class="side-arrow left-arrow"><span class="arrow-icon">▶</span></div>
-<div class="side-menu left">
-  <button class="side-menu-btn" onclick="openPanel('peserta')"><span class="sm-icon">👥</span> Peserta</button>
-  <button class="side-menu-btn" onclick="openPanel('hadiah')"><span class="sm-icon">🎁</span> Hadiah</button>
-</div>
-<div class="side-trigger right"></div>
-<div class="side-arrow right-arrow"><span class="arrow-icon">◀</span></div>
-<div class="side-menu right">
-  <button class="side-menu-btn" onclick="openPanel('rekap')"><span class="sm-icon">📋</span> Rekap</button>
-  <button class="side-menu-btn" onclick="openPanel('settings')"><span class="sm-icon">⚙️</span> Pengaturan</button>
-</div>
-
-<!-- Panel overlays -->
-<div class="panel-overlay-backdrop" id="panel-backdrop" onclick="closePanel()"></div>
-<div class="panel-overlay panel-left" id="panel-peserta">
-  <button class="panel-close" onclick="closePanel()">✕</button>
-  <div class="panel-title">👥 Data Peserta</div>
-  <div id="panel-peserta-content"></div>
-</div>
-<div class="panel-overlay panel-left" id="panel-hadiah">
-  <button class="panel-close" onclick="closePanel()">✕</button>
-  <div class="panel-title">🎁 Kelola Hadiah</div>
-  <div id="panel-hadiah-content"></div>
-</div>
-<div class="panel-overlay panel-right" id="panel-rekap">
-  <button class="panel-close" onclick="closePanel()">✕</button>
-  <div class="panel-title">📋 Rekap Pemenang</div>
-  <div id="panel-rekap-content"></div>
-</div>
-<div class="panel-overlay panel-right" id="panel-settings">
-  <button class="panel-close" onclick="closePanel()">✕</button>
-  <div class="panel-title">⚙️ Pengaturan</div>
-  <div id="panel-settings-content"></div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════════════════ -->
-<script>
-// ─── DEVICE DETECTION (global, dipakai oleh semua modul di bawah) ──
-const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-// ─── STATE ───────────────────────────────────────────────────
-let allPeserta    = [];
-let allHadiah     = [];
-let allRekap      = [];
-let appSettings   = {};
-
-// State slot machine
-let slotRunning   = false;
-let stopRequested = false;   // ← flag tombol STOP ditekan
-let poolTerAcak   = [];      // Pool yang sudah diacak server (untuk stop manual)
-let currentHadiahCtx = null; // { namaHadiah, jumlah }
-let audioCtx      = null;
-
-// ─── UTILITAS PENGACAKAN CLIENT-SIDE ─────────────────────────
-function cryptoRandom() {
-  const buf = new Uint32Array(1);
-  crypto.getRandomValues(buf);
-  return buf[0] / 4294967296;
-}
-
-function clientSideShuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(cryptoRandom() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-
-// ─── SIDE MENU TOUCH SUPPORT ─────────────────────────────────
-// Di Android, CSS :hover tidak berfungsi untuk side-trigger.
-// Gunakan touch event sebagai pengganti hover.
-(function(){
-  function setupSideMenuTouch(triggerClass, menuClass, arrowClass){
-    const trigger = document.querySelector(triggerClass);
-    const menu    = document.querySelector(menuClass);
-    const arrow   = document.querySelector(arrowClass);
-    if(!trigger || !menu) return;
-
-    // Tap pada arrow/trigger → toggle menu
-    [trigger, arrow].filter(Boolean).forEach(el=>{
-      el.addEventListener('touchstart', (e)=>{
-        e.preventDefault();
-        const isOpen = menu.style.transform === 'translateY(-50%) translateX(0px)' ||
-                       menu.classList.contains('touch-open');
-        if(isOpen){
-          menu.classList.remove('touch-open');
-          menu.style.transform = '';
-          if(arrow) arrow.style.opacity = '.5';
-        } else {
-          menu.classList.add('touch-open');
-          menu.style.transform = 'translateY(-50%) translateX(0px)';
-          if(arrow) arrow.style.opacity = '0';
-          // Auto-tutup setelah 4 detik
-          setTimeout(()=>{
-            menu.classList.remove('touch-open');
-            menu.style.transform = '';
-            if(arrow) arrow.style.opacity = '.5';
-          }, 4000);
-        }
-      }, {passive: false});
-    });
-  }
-  // Pasang setelah DOM siap
-  window.addEventListener('DOMContentLoaded', ()=>{
-    setupSideMenuTouch('.side-trigger.left',  '.side-menu.left',  '.side-arrow.left-arrow');
-    setupSideMenuTouch('.side-trigger.right', '.side-menu.right', '.side-arrow.right-arrow');
-  });
-})();
-// Diganti dengan animasi CSS di body::after (lebih efisien di Android
-// karena berjalan di GPU compositor thread, bukan JS main thread).
-// Kode asli disimpan di bawah sebagai komentar untuk referensi.
-/*
-(function(){
-  const canvas = document.getElementById('bg-canvas');
-  ...
-})();
-*/
-
-// ─── AUDIO ENGINE ────────────────────────────────────────────
-function getAudioCtx(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  }
-  // Android Chrome: AudioContext sering dalam state 'suspended' sampai ada gesture
-  if(audioCtx.state === 'suspended'){
-    audioCtx.resume().catch(()=>{});
-  }
-  return audioCtx;
-}
-function playTone(freq, dur, type='sine', vol=0.3){
+// ------------------------------------------------------------
+// API ROUTER — membaca fn & args dari query parameter
+// ------------------------------------------------------------
+function handleApiCall(e) {
+  let result;
   try {
-    const ac  = getAudioCtx();
-    if(ac.state !== 'running') return; // skip jika masih suspended
-    const osc = ac.createOscillator();
-    const gn  = ac.createGain();
-    osc.connect(gn); gn.connect(ac.destination);
-    osc.type = type; osc.frequency.setValueAtTime(freq, ac.currentTime);
-    gn.gain.setValueAtTime(vol, ac.currentTime);
-    gn.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
-    osc.start(); osc.stop(ac.currentTime+dur);
-  } catch(e){}
-}
-function playDrum()    { playTone(80,.3,'sawtooth',.4); }
-function playTick()    { playTone(1200,.04,'square',.12); }
-function playSlowTick(f){ playTone(f,.12,'square',.25); }
-function playFanfare() {
-  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.3,'sine',.4),i*120));
-  setTimeout(()=>playTone(1047,.6,'sine',.5),480);
-}
-function playStopSound(){
-  // Suara dramatis saat tombol stop ditekan
-  [300,400,500,650,800].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sawtooth',.3),i*60));
-}
-
-// ─── UTILS ───────────────────────────────────────────────────
-function showLoading(v, msg='MEMPROSES...'){
-  document.getElementById('loading-overlay').classList.toggle('show', v);
-  document.getElementById('loading-text').textContent = msg;
-}
-function showAlert(id, msg, type='info'){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.className = `alert alert-${type} show`;
-  el.innerHTML = msg;
-  setTimeout(()=>el.classList.remove('show'), 7000);
-}
-function toast(msg, type='info'){
-  const icons = {success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(()=>{ el.classList.add('removing'); setTimeout(()=>el.remove(),300); }, 4000);
-}
-// ─── GAS ENDPOINT ────────────────────────────────────────────
-// Ganti nilai GAS_URL dengan URL deploy GAS Web App Anda
-// Cara deploy: Apps Script → Deploy → New deployment →
-//   Type: Web app, Execute as: Me, Who has access: Anyone
-// Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxnk9RF9OPQ49HZM1XpJ8Vaw-OLvh61AcYMEFzfqjadJEFCVb-vC6tAuaWMPTXbInj/exec';
-
-// gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
-// GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
-async function gasCall(fn, ...args){
-  if(!GAS_URL || GAS_URL.startsWith('GANTI')){
-    console.error('GAS_URL belum diisi di index.html!');
-    throw new Error('GAS_URL belum dikonfigurasi.');
-  }
-  const params = new URLSearchParams({
-    fn,
-    args: JSON.stringify(args)
-  });
-  const url = `${GAS_URL}?${params.toString()}`;
-  const resp = await fetch(url, { redirect: 'follow' });
-  if(!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return resp.json();
-}
-function escStr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
-function formatNoKK(kk){ return String(kk).replace(/\D/g,'').replace(/(\d{4})(?=\d)/g,'$1 '); }
-function formatKKInput(el){
-  let v = el.value.replace(/\D/g,'').slice(0,16);
-  el.value = v.replace(/(\d{4})(?=\d)/g,'$1 ');
-}
-
-// ─── PANEL NAVIGATION ────────────────────────────────────────
-let currentPanel = null;
-
-function openPanel(name){
-  closePanel();
-  const panelEl = document.getElementById('panel-'+name);
-  const contentEl = document.getElementById('panel-'+name+'-content');
-  if(!panelEl || !contentEl) return;
-
-  // Move tab content into panel
-  const tabContent = document.getElementById('tab-'+name);
-  if(tabContent) {
-    contentEl.innerHTML = '';
-    Array.from(tabContent.children).forEach(ch => contentEl.appendChild(ch));
-  }
-
-  // Trigger data load
-  if(name==='peserta')  loadPeserta();
-  if(name==='hadiah')   loadHadiah();
-  if(name==='rekap')    loadRekap();
-  if(name==='settings') loadSettings();
-
-  panelEl.classList.add('open');
-  document.getElementById('panel-backdrop').classList.add('show');
-  currentPanel = name;
-}
-
-function closePanel(){
-  if(currentPanel){
-    const panelEl = document.getElementById('panel-'+currentPanel);
-    const contentEl = document.getElementById('panel-'+currentPanel+'-content');
-    const tabContent = document.getElementById('tab-'+currentPanel);
-
-    // Move children back to tab container
-    if(tabContent && contentEl){
-      Array.from(contentEl.children).forEach(ch => tabContent.appendChild(ch));
-    }
-
-    panelEl.classList.remove('open');
-  }
-  document.getElementById('panel-backdrop').classList.remove('show');
-  currentPanel = null;
-  // Refresh undian data — 1 request gabungan
-  refreshAll();
-}
-
-// Legacy showTab compatibility
-function showTab(name, btn){
-  if(name === 'undian') {
-    closePanel();
-  } else {
-    openPanel(name);
-  }
-}
-
-// ─── SETTINGS ────────────────────────────────────────────────
-function applySettingsData(data){
-  appSettings = data||{};
-  const s = appSettings;
-  const setVal = (id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
-  setVal('set-nama-acara', s.nama_acara);
-  setVal('set-tahun',      s.tahun_hijriah);
-  setVal('set-panitia',    s.nama_panitia);
-  setVal('set-org',        s.nama_organisasi);
-  setVal('set-lokasi',     s.lokasi);
-  setVal('set-tema',       s.tema);
-  applySettings();
-}
-async function loadSettings(){
-  const cached = cacheGet(CACHE_KEY_SETTINGS);
-  if(cached) applySettingsData(cached);   // tampil instan dari cache
-  const r = await gasCall('getSettings');
-  const fresh = r.data||{};
-  cacheSet(CACHE_KEY_SETTINGS, fresh);
-  applySettingsData(fresh);
-}
-function applySettings(){
-  const s = appSettings;
-  document.getElementById('h-nama-acara').textContent   = s.nama_acara     || 'Undian Doorprize — Tahun Baru Islam';
-  document.getElementById('h-tahun').textContent        = s.tahun_hijriah  ? `مُحَرَّم ${s.tahun_hijriah}` : 'مُحَرَّم ١٤٤٧ هـ';
-  document.getElementById('h-tema').textContent         = s.tema            || '';
-  document.getElementById('header-panitia').textContent = [s.nama_panitia, s.nama_organisasi].filter(Boolean).join(' • ') || '—';
-
-  document.title = (s.nama_acara || 'Undian Doorprize') + ' — Tahun Baru Islam';
-}
-async function simpanSettings(){
-  const obj = {
-    nama_acara:       document.getElementById('set-nama-acara').value.trim(),
-    tahun_hijriah:    document.getElementById('set-tahun').value.trim(),
-    nama_panitia:     document.getElementById('set-panitia').value.trim(),
-    nama_organisasi:  document.getElementById('set-org').value.trim(),
-    lokasi:           document.getElementById('set-lokasi').value.trim(),
-    tema:             document.getElementById('set-tema').value.trim(),
-  };
-  Object.assign(appSettings, obj);
-  showLoading(true,'MENYIMPAN...');
-  await gasCall('saveSettings', obj);
-  showLoading(false);
-  cacheSet(CACHE_KEY_SETTINGS, appSettings);  // update cache lokal
-  applySettings();
-  showAlert('alert-settings','✅ Pengaturan berhasil disimpan.','success');
-}
-
-// ─── PESERTA ─────────────────────────────────────────────────
-async function loadPeserta(){
-  showLoading(true,'MEMUAT PESERTA...');
-  try {
-    const r = await gasCall('getPeserta');
-    allPeserta = r.data || [];
-    renderPeserta(allPeserta);
-    await refreshStats();
-  } catch(e){ toast('Gagal memuat peserta: '+e.message,'error'); }
-  showLoading(false);
-}
-function renderPeserta(data){
-  const tb = document.getElementById('tbody-peserta');
-  document.getElementById('count-display').textContent = data.length;
-  if(!data.length){
-    tb.innerHTML='<tr class="empty-row"><td colspan="6">Tidak ada data peserta.</td></tr>';
-    return;
-  }
-  tb.innerHTML = data.map((p,i)=>`<tr>
-    <td style="color:var(--muted);font-size:.85rem">${i+1}</td>
-    <td><code style="font-size:.9rem;color:var(--gold2)">${formatNoKK(p.noKK)}</code></td>
-    <td style="font-weight:700">${p.nama||'<em style="color:var(--muted)">—</em>'}</td>
-    <td>${p.kelurahan||'—'}</td>
-    <td style="color:var(--muted);font-size:.88rem">${p.rt||'—'}/${p.rw||'—'}</td>
-    <td><button class="btn btn-red btn-sm" onclick="hapusPesertaFn('${p.noKK}')">✕</button></td>
-  </tr>`).join('');
-}
-function filterPeserta(){
-  const q = document.getElementById('search-peserta').value.toLowerCase();
-  renderPeserta(allPeserta.filter(p=>
-    p.noKK.toLowerCase().includes(q)||
-    (p.nama||'').toLowerCase().includes(q)||
-    (p.kelurahan||'').toLowerCase().includes(q)
-  ));
-}
-async function hapusPesertaFn(noKK){
-  if(!confirm(`Hapus peserta ${noKK}?`)) return;
-  showLoading(true);
-  await gasCall('hapusPeserta', noKK);
-  toast('Peserta dihapus','warn');
-  await loadPeserta();
-}
-async function hapusSemuaKonfirmasi(){
-  if(!confirm('Hapus SEMUA peserta? Tindakan ini tidak bisa dibatalkan.')) return;
-  if(!confirm('Yakin? Data peserta akan hilang.')) return;
-  showLoading(true,'MENGHAPUS...');
-  await gasCall('hapusSemuaPeserta');
-  showLoading(false);
-  toast('Semua peserta dihapus','warn');
-  await loadPeserta();
-}
-async function tambahManual(){
-  const kk  = document.getElementById('inp-kk').value.replace(/\D/g,'').trim();
-  const nm  = document.getElementById('inp-nama').value.trim();
-  const kel = document.getElementById('inp-kel').value.trim();
-  const rt  = document.getElementById('inp-rt').value.trim();
-  const rw  = document.getElementById('inp-rw').value.trim();
-  if(kk.length!==16) return showAlert('alert-manual','❌ No KK harus 16 digit angka.','error');
-  showLoading(true);
-  const r = await gasCall('tambahPeserta', kk, nm, kel, rt, rw);
-  showLoading(false);
-  if(r.added>0){
-    showAlert('alert-manual','✅ Peserta berhasil ditambahkan.','success');
-    toast('Peserta ditambahkan','success');
-    ['inp-kk','inp-nama','inp-kel','inp-rt','inp-rw'].forEach(id=>document.getElementById(id).value='');
-    loadPeserta();
-  } else if(r.dupes>0) showAlert('alert-manual','⚠️ No KK sudah terdaftar (duplikat).','warn');
-  else showAlert('alert-manual','❌ Format No KK tidak valid.','error');
-}
-
-// ─── FILE UPLOAD ─────────────────────────────────────────────
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if(file) processFile(file);
-}
-function handleFileUpload(e){
-  const file = e.target.files[0];
-  if(file) processFile(file);
-}
-function processFile(file){
-  const name = file.name.toLowerCase();
-  if(!name.endsWith('.csv')) return showAlert('alert-upload','❌ Hanya file CSV (.csv) yang didukung.','error');
-  const reader = new FileReader();
-  reader.onload = e => parseCSV(e.target.result);
-  reader.readAsText(file,'UTF-8');
-}
-async function parseCSV(text){
-  const lines  = text.split('\n').filter(l=>l.trim());
-  const isHdr  = /^[a-zA-Z\s]/i.test(lines[0].split(',')[0]);
-  const start  = isHdr ? 1 : 0;
-  const rows   = lines.slice(start).map(l=>{
-    const cols = l.split(',').map(c=>c.trim().replace(/"/g,''));
-    return [cols[0]||'',cols[1]||'',cols[2]||'',cols[3]||'',cols[4]||''];
-  }).filter(r=>r[0].replace(/\D/g,'').length>0);
-  if(!rows.length) return showAlert('alert-upload','❌ File kosong atau format tidak sesuai.','error');
-  document.getElementById('upload-progress').style.display='block';
-  const BATCH = 200;
-  let added=0,dupes=0,invalid=0;
-  for(let i=0;i<rows.length;i+=BATCH){
-    const batch=rows.slice(i,i+BATCH);
-    const pct=Math.round(((i+batch.length)/rows.length)*100);
-    document.getElementById('progress-bar').style.width=pct+'%';
-    document.getElementById('progress-text').textContent=`Memproses ${i+batch.length} / ${rows.length} baris...`;
-    const r=await gasCall('uploadPeserta',batch);
-    added+=r.added||0; dupes+=r.dupes||0; invalid+=r.invalid||0;
-  }
-  document.getElementById('upload-progress').style.display='none';
-  showAlert('alert-upload',
-    `✅ Berhasil: <strong>${added}</strong> &nbsp;⚠ Duplikat: <strong>${dupes}</strong> &nbsp;❌ Tidak valid: <strong>${invalid}</strong>`,
-    added>0?'success':'warn');
-  if(added>0){ toast(`${added} peserta ditambahkan`,'success'); loadPeserta(); }
-}
-
-// ─── STATS ───────────────────────────────────────────────────
-// ─── CACHE HELPERS ───────────────────────────────────────────
-// Data GAS di-cache di localStorage agar refresh berikutnya
-// terasa instan: data lama tampil dulu, lalu diganti data segar.
-const CACHE_KEY_HADIAH   = 'udp_cache_hadiah';
-const CACHE_KEY_REKAP    = 'udp_cache_rekap';
-const CACHE_KEY_SETTINGS = 'udp_cache_settings';
-const CACHE_TTL_MS       = 10 * 60 * 1000; // 10 menit
-function cacheSet(key, data){
-  try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), data})); }catch(e){}
-}
-function cacheGet(key){
-  try{
-    const raw = localStorage.getItem(key);
-    if(!raw) return null;
-    const obj = JSON.parse(raw);
-    if(Date.now()-obj.ts > CACHE_TTL_MS) return null;
-    return obj.data;
-  }catch(e){ return null; }
-}
-function cacheClear(){
-  [CACHE_KEY_HADIAH,CACHE_KEY_REKAP,CACHE_KEY_SETTINGS].forEach(k=>{
-    try{ localStorage.removeItem(k); }catch(e){}
-  });
-}
-
-// ─── STATS ───────────────────────────────────────────────────
-function applyStats(r){
-  if(!r||!r.success) return;
-  document.getElementById('s-total').textContent  = r.totalPeserta  ??'—';
-  document.getElementById('s-aktif').textContent  = r.sisaPool      ??'—';
-  document.getElementById('s-menang').textContent = r.totalTerpilih ??'—';
-  document.getElementById('s-sisa').textContent   = r.sisaPool      ??'—';
-  document.getElementById('u-pool').textContent   = r.sisaPool      ??'—';
-  document.getElementById('u-hadir').textContent  = r.hadir         ??'—';
-}
-async function refreshStats(){
-  applyStats(await gasCall('getStatistik'));
-}
-
-// ─── HADIAH ──────────────────────────────────────────────────
-function applyHadiah(data){
-  allHadiah = data||[];
-  renderHadiah();
-  renderUndianList();
-}
-async function loadHadiah(){
-  const cached = cacheGet(CACHE_KEY_HADIAH);
-  if(cached) applyHadiah(cached);         // tampil instan dari cache
-  const r = await gasCall('getHadiah');
-  const fresh = r.data||[];
-  cacheSet(CACHE_KEY_HADIAH, fresh);
-  applyHadiah(fresh);
-}
-
-// ─── REFRESH GABUNGAN pasca-aksi — 1 request ganti 3 ─────────
-async function refreshAll(){
-  const r = await gasCall('getRefreshData');
-  if(!r.success) return;
-  cacheSet(CACHE_KEY_HADIAH, r.hadiah);
-  cacheSet(CACHE_KEY_REKAP,  r.rekap);
-  applyHadiah(r.hadiah);
-  applyRekap(r.rekap);
-  applyStats(r.statistik);
-}
-function renderHadiah(){
-  const el = document.getElementById('hadiah-list');
-  if(!allHadiah.length){
-    el.innerHTML='<p style="color:var(--muted);font-size:.9rem;margin-bottom:14px">Belum ada hadiah. Tambah di bawah.</p>';
-    return;
-  }
-  el.innerHTML = allHadiah.map((h,i)=>`
-    <div class="hadiah-item">
-      <div class="hadiah-num">${i+1}</div>
-      <div class="hadiah-info">
-        <strong>${h.nama} ${h.tipe==='utama'?'<span class="badge badge-gold">🌟 Utama</span>':''}</strong>
-        <div class="meta">${h.deskripsi||''} ${h.sponsor?'• Sponsor: <em>'+h.sponsor+'</em>':''} • ${h.jumlah} pemenang</div>
-      </div>
-      <span class="badge ${h.status==='Selesai'?'badge-teal':'badge-gold'}" style="margin-right:8px">${h.status||'Belum'}</span>
-      <button class="btn btn-red btn-sm" onclick="hapusHadiah(${i})">✕</button>
-    </div>`).join('');
-}
-function hapusHadiah(i){ allHadiah.splice(i,1); renderHadiah(); }
-function tambahHadiah(){
-  const nama    = document.getElementById('inp-h-nama').value.trim();
-  const desc    = document.getElementById('inp-h-desc').value.trim();
-  const sponsor = document.getElementById('inp-h-sponsor').value.trim();
-  const jml     = parseInt(document.getElementById('inp-h-jml').value)||1;
-  const isUtama = document.getElementById('inp-h-utama').checked;
-  if(!nama) return showAlert('alert-hadiah','❌ Nama hadiah tidak boleh kosong.','error');
-  allHadiah.push({nama,deskripsi:desc,sponsor,jumlah:jml,status:'Belum',tipe:isUtama?'utama':'biasa'});
-  document.getElementById('inp-h-nama').value='';
-  document.getElementById('inp-h-desc').value='';
-  document.getElementById('inp-h-sponsor').value='';
-  document.getElementById('inp-h-jml').value='1';
-  document.getElementById('inp-h-utama').checked=false;
-  renderHadiah();
-  showAlert('alert-hadiah',`✅ "${nama}"${isUtama?' (🌟 Hadiah Utama)':''} ditambahkan. Klik <strong>Simpan Semua</strong> untuk menyimpan.`,'info');
-}
-async function simpanSemuaHadiah(){
-  if(!allHadiah.length) return showAlert('alert-hadiah','❌ Belum ada hadiah.','error');
-  showLoading(true,'MENYIMPAN HADIAH...');
-  await gasCall('simpanHadiah', allHadiah);
-  cacheSet(CACHE_KEY_HADIAH, allHadiah);  // update cache lokal
-  await loadHadiah();
-  showLoading(false);
-  toast('Hadiah berhasil disimpan','success');
-  showAlert('alert-hadiah','✅ Semua hadiah berhasil disimpan ke spreadsheet.','success');
-}
-
-// ─── UNDIAN LIST ─────────────────────────────────────────────
-let lockedPrizeIdx = null; // index hadiah yang sedang "siap diundi", hadiah lain non-aktif
-
-function renderUndianList(){
-  const el = document.getElementById('undian-list');
-  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
-  const selesai = hadiahBiasa.filter(h=>h.status==='Selesai').length;
-  document.getElementById('u-selesai').textContent = selesai;
-
-  const pfCount = document.getElementById('pf-count');
-  const sisa = hadiahBiasa.length - selesai;
-  if(pfCount) pfCount.textContent = `${hadiahBiasa.length} hadiah${sisa > 0 ? ` • ${sisa} sisa` : ' • semua selesai'}`;
-
-  // Auto-unlock jika hadiah yang terpilih sudah dapat pemenang (Selesai)
-  if(lockedPrizeIdx !== null && (!allHadiah[lockedPrizeIdx] || allHadiah[lockedPrizeIdx].status === 'Selesai')){
-    lockedPrizeIdx = null;
-  }
-
-  const btnSiapUndi = document.getElementById('btn-siap-undi');
-  if(btnSiapUndi) btnSiapUndi.disabled = (lockedPrizeIdx !== null) || !hadiahBiasa.length;
-
-  if(!hadiahBiasa.length){
-    el.innerHTML='<p style="color:var(--muted);text-align:center;padding:36px;font-size:1.05rem">Belum ada hadiah biasa. Buka menu Hadiah untuk menambahkan.</p>';
-    renderGrandList();
-    return;
-  }
-
-  function cardHtml(h, i, idSuffix){
-    const isDone     = h.status==='Selesai';
-    const isSelected = lockedPrizeIdx === i;
-    const isLocked   = lockedPrizeIdx !== null && !isSelected && !isDone;
-    const cardClass  = [isDone?'done':'', isSelected?'prize-card-selected':'', isLocked?'prize-card-locked':''].filter(Boolean).join(' ');
-    // Badge status — disandingkan dengan tag qty di .prize-card-meta (bukan absolute)
-    const statusBadge = isDone
-      ? '' // kalau selesai, sudah ada ribbon winner
-      : `<span class="prize-card-status"><span class="badge ${isSelected?'badge-gold':'badge-muted'}">${isSelected?'🎯 Siap Diundi':(h.status||'Belum')}</span></span>`;
-    return `
-    <div class="prize-card ${cardClass}" id="prize-card-${i}${idSuffix}" data-idx="${i}">
-      ${isDone ? '<div class="prize-card-ribbon"><span>🏆 Winner</span></div>' : ''}
-      <div class="prize-card-header">
-        <div class="prize-card-rank">Hadiah #${i+1}</div>
-        <div class="prize-card-name">${h.nama}</div>
-      </div>
-      <div class="prize-card-body">
-        ${h.deskripsi ? `<div class="prize-card-desc">${h.deskripsi}</div>` : ''}
-        <div class="prize-card-meta">
-          ${h.sponsor ? `<span class="prize-tag tag-sponsor">★ ${h.sponsor}</span>` : ''}
-          <span class="prize-tag tag-qty">${h.jumlah} pemenang</span>
-          ${statusBadge}
-        </div>
-      </div>
-      <div class="prize-card-action">
-        <button class="btn ${isDone?'btn-ghost':'btn-gold'}" onclick="mulaiUndian('${escStr(h.nama)}',${h.jumlah})" ${(isDone||isLocked)?'disabled':''}>
-          ${isDone ? '✅ Selesai' : (isSelected ? '🎯 Undi Sekarang' : 'Undi Sekarang')}
-        </button>
-      </div>
-    </div>`;
-  }
-
-  const entries = allHadiah.map((h,i)=>({h,i})).filter(x=>x.h.tipe!=='utama');
-  // Duplikasi sekali agar loop vertikal terlihat berkelanjutan (seamless).
-  // Hanya duplikasi jika ada >1 kartu, agar tidak aneh kalau cuma 1 hadiah.
-  const original = entries.map(x=>cardHtml(x.h,x.i,'')).join('');
-  const duplicate = entries.length>1 ? entries.map(x=>cardHtml(x.h,x.i,'-dup')).join('') : '';
-
-  el.innerHTML = `<div class="prize-grid" id="prize-grid">${original}${duplicate}</div>`;
-  startBoxRunning();
-  renderGrandList();
-}
-
-// ─── HADIAH UTAMA (GRAND PRIZE) — render & gating ─────────────
-function renderGrandList(){
-  const el        = document.getElementById('grand-list');
-  const lockNote  = document.getElementById('grand-lock-note');
-  const gfCount   = document.getElementById('gf-count');
-  if(!el) return;
-
-  const grandItems  = allHadiah.filter(h=>h.tipe==='utama');
-  const hadiahBiasa = allHadiah.filter(h=>h.tipe!=='utama');
-  const semuaBiasaSelesai = hadiahBiasa.length>0 && hadiahBiasa.every(h=>h.status==='Selesai');
-  const terkunci = !semuaBiasaSelesai; // terkunci jika masih ada hadiah biasa yang belum selesai (atau belum ada hadiah biasa sama sekali)
-
-  if(gfCount){
-    const selesaiUtama = grandItems.filter(h=>h.status==='Selesai').length;
-    gfCount.textContent = `${grandItems.length} hadiah${selesaiUtama?` • ${selesaiUtama} selesai`:''}`;
-  }
-
-  if(lockNote) lockNote.style.display = (grandItems.length && terkunci) ? 'flex' : 'none';
-
-  if(!grandItems.length){
-    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.98rem">Belum ada Hadiah Utama. Tambahkan lewat menu Hadiah dan centang "Jadikan Hadiah Utama".</p>';
-    return;
-  }
-
-  el.innerHTML = '<div class="grand-grid">' + allHadiah.map((h,i)=>{
-    if(h.tipe!=='utama') return '';
-    const isDone   = h.status==='Selesai';
-    const isLocked = !isDone && terkunci;
-    const cardClass = [isDone?'done':'', isLocked?'grand-locked':''].filter(Boolean).join(' ');
-    return `
-    <div class="grand-card ${cardClass}" id="grand-card-${i}">
-      <span class="grand-card-star">⭐</span>
-      ${isDone ? '<div class="grand-card-ribbon"><span>🏆 Winner</span></div>' : ''}
-      <div class="grand-card-header">
-        <div class="grand-card-rank">Hadiah Utama</div>
-        <div class="grand-card-name">${h.nama}</div>
-      </div>
-      <div class="grand-card-body">
-        ${h.deskripsi ? `<div class="grand-card-desc">${h.deskripsi}</div>` : ''}
-        <div class="grand-card-meta">
-          ${h.sponsor ? `<span class="prize-tag tag-sponsor">★ ${h.sponsor}</span>` : ''}
-          <span class="prize-tag tag-qty">${h.jumlah} pemenang</span>
-        </div>
-      </div>
-      <div class="grand-card-action">
-        <button class="btn ${isDone?'btn-ghost':'btn-gold'}" onclick="mulaiUndian('${escStr(h.nama)}',${h.jumlah})" ${(isDone||isLocked)?'disabled':''}>
-          ${isDone ? '✅ Selesai' : (isLocked ? '🔒 Terkunci' : '⭐ Undi Hadiah Utama')}
-        </button>
-        ${isLocked ? '<div class="btn-locked-note">Selesaikan semua hadiah biasa dulu</div>' : ''}
-      </div>
-    </div>`;
-  }).join('') + '</div>';
-
-  // Restart marquee animasi jika sedang aktif
-  // (dipanggil setelah konten baru di-render)
-  requestAnimationFrame(()=>reattachGrandMarquee());
-}
-
-// ─── GRAND PRIZE MARQUEE — Vertikal scroll + zoom saat terpusat ──
-// Kartu bergerak naik perlahan; ketika sebuah kartu mencapai tengah
-// viewport, animasi melambat, zoom, berhenti sejenak, lalu lanjut.
-let grandMarqueeEnabled = false;
-let grandMarqueeRAF     = null;
-let grandMarqueePaused  = false;  // true saat kartu spotlight tampil
-let grandMarqueeOffset  = 0;      // translateY saat ini (px, selalu negatif = ke atas)
-let grandMarqueeSpeed   = isTouchDevice ? 0.35 : 0.55;  // px per frame normal
-let grandMarqueeSpotlightTimer = null;
-
-function toggleGrandMarquee(){
-  grandMarqueeEnabled = !grandMarqueeEnabled;
-  const btn = document.getElementById('btn-grand-marquee');
-  const list = document.getElementById('grand-list');
-  if(!btn || !list) return;
-
-  if(grandMarqueeEnabled){
-    btn.textContent  = '⏸ Animasi';
-    btn.classList.add('active');
-    list.classList.add('marquee-mode');
-    startGrandMarquee();
-  } else {
-    btn.textContent  = '▶ Animasi';
-    btn.classList.remove('active');
-    list.classList.remove('marquee-mode');
-    stopGrandMarquee();
-    // kembalikan posisi scroll normal
-    grandMarqueeOffset = 0;
-    const track = list.querySelector('.grand-marquee-track');
-    if(track) track.style.transform = 'translateY(0)';
-  }
-}
-
-function startGrandMarquee(){
-  stopGrandMarquee();
-  const list  = document.getElementById('grand-list');
-  if(!list || !grandMarqueeEnabled) return;
-
-  // Pastikan kartu dibungkus dalam .grand-marquee-track
-  let track = list.querySelector('.grand-marquee-track');
-  if(!track){
-    const grid = list.querySelector('.grand-grid');
-    if(!grid) return;
-    track = document.createElement('div');
-    track.className = 'grand-marquee-track';
-    list.insertBefore(track, grid);
-    track.appendChild(grid);
-  }
-
-  // Duplikasi kartu untuk seamless loop (jika belum ada klon)
-  const grid = track.querySelector('.grand-grid');
-  if(grid && !track.querySelector('.grand-grid-clone')){
-    const clone = grid.cloneNode(true);
-    clone.classList.add('grand-grid-clone');
-    clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-    track.appendChild(clone);
-  }
-
-  const listH  = list.clientHeight;
-  // Hitung tinggi satu salinan SETELAH klon ditambahkan (track = 2× grid)
-  // Beri sedikit waktu agar DOM merender ukuran
-  grandMarqueeOffset = 0;
-  grandMarqueePaused = false;
-  lastSpotlightCard  = null;
-
-  // Gunakan requestAnimationFrame satu kali agar ukuran track ter-update
-  requestAnimationFrame(()=>{
-    const origH = track.scrollHeight / 2;
-
-    function step(){
-      if(!grandMarqueeEnabled){ grandMarqueeRAF = null; return; }
-      if(grandMarqueePaused){
-        grandMarqueeRAF = requestAnimationFrame(step); return;
-      }
-
-      grandMarqueeOffset -= grandMarqueeSpeed; // selalu bergerak ke atas
-
-      // Seamless loop: ketika offset melebihi tinggi satu salinan, reset ke 0
-      if(Math.abs(grandMarqueeOffset) >= origH){
-        grandMarqueeOffset = 0;
-      }
-
-      track.style.transform = `translateY(${grandMarqueeOffset}px)`;
-
-      // Cek kartu mana yang paling dekat ke tengah viewport
-      checkSpotlightCard(track, list, listH);
-
-      grandMarqueeRAF = requestAnimationFrame(step);
-    }
-    grandMarqueeRAF = requestAnimationFrame(step);
-  });
-}
-
-// Deteksi kartu yang paling dekat ke tengah viewport grand-list
-let lastSpotlightCard = null;
-function checkSpotlightCard(track, list, listH){
-  const cards  = track.querySelectorAll('.grand-card');
-  if(!cards.length) return;
-  const center = listH / 2;
-
-  let closest = null;
-  let minDist  = Infinity;
-  cards.forEach(card => {
-    // posisi relatif terhadap list (viewport), bukan dokumen
-    const cardTop    = card.getBoundingClientRect().top - list.getBoundingClientRect().top;
-    const cardCenter = cardTop + card.offsetHeight / 2;
-    const dist       = Math.abs(cardCenter - center);
-    if(dist < minDist){
-      minDist  = dist;
-      closest  = card;
-    }
-  });
-
-  // Trigger zoom hanya ketika kartu baru masuk zona tengah (threshold 20px)
-  if(closest && closest !== lastSpotlightCard && minDist < 20){
-    lastSpotlightCard = closest;
-    zoomSpotlight(closest);
-  }
-}
-
-function zoomSpotlight(card){
-  // Hapus spotlight sebelumnya
-  document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>{
-    c.classList.remove('marquee-spotlight');
-  });
-  // Jeda sejenak
-  grandMarqueePaused = true;
-  card.classList.add('marquee-spotlight');
-
-  clearTimeout(grandMarqueeSpotlightTimer);
-  grandMarqueeSpotlightTimer = setTimeout(()=>{
-    card.classList.remove('marquee-spotlight');
-    grandMarqueePaused = false;
-  }, 1100); // berhenti 1.1 detik saat di tengah
-}
-
-function stopGrandMarquee(){
-  if(grandMarqueeRAF){ cancelAnimationFrame(grandMarqueeRAF); grandMarqueeRAF = null; }
-  clearTimeout(grandMarqueeSpotlightTimer);
-  grandMarqueePaused = false;
-  lastSpotlightCard  = null;
-  // Bersihkan kelas spotlight
-  document.querySelectorAll('.grand-card.marquee-spotlight').forEach(c=>c.classList.remove('marquee-spotlight'));
-}
-
-// Dipanggil ulang setiap renderGrandList agar track segar
-function reattachGrandMarquee(){
-  const list = document.getElementById('grand-list');
-  if(!list) return;
-  stopGrandMarquee();
-  grandMarqueeOffset = 0;
-  lastSpotlightCard  = null;
-
-  // Bersihkan wrapper lama jika ada (beserta klon-nya)
-  const oldTrack = list.querySelector('.grand-marquee-track');
-  if(oldTrack){
-    // Hapus elemen klon dulu
-    const clone = oldTrack.querySelector('.grand-grid-clone');
-    if(clone) clone.remove();
-    // Pindahkan konten kembali ke list
-    Array.from(oldTrack.children).forEach(ch => list.insertBefore(ch, oldTrack));
-    oldTrack.remove();
-  }
-  // Reset transform sisa
-  const grid = list.querySelector('.grand-grid');
-  if(grid) grid.style.transform = '';
-
-  if(grandMarqueeEnabled){
-    list.classList.add('marquee-mode');
-    startGrandMarquee();
-  } else {
-    list.classList.remove('marquee-mode');
-  }
-}
-
-// ─── KOTAK HADIAH BERJALAN — auto-scroll VERTIKAL berkelanjutan ──
-// Track bergeser ke bawah terus-menerus tanpa putus (seamless loop),
-// menggunakan konten yang diduplikasi sekali sehingga saat scrollTop
-// mencapai setengah tinggi total, posisi direset ke 0 secara mulus
-// (karena salinan kedua identik dengan salinan pertama).
-// Berhenti sementara saat undian berlangsung, hadiah terkunci,
-// atau saat kursor hover di area kotak hadiah.
-
-// Kecepatan lebih rendah di layar sentuh (Android) untuk menghindari jank
-let boxRunRAF      = null;
-let boxScrollSpeed = isTouchDevice ? 0.3 : 0.45; // px per frame
-let isHoveringPrizeTrack = false;
-let prizeHoverListenersAttached = false;
-
-function setupPrizeHoverPause(){
-  if(prizeHoverListenersAttached) return;
-  const viewport = document.getElementById('prize-track-viewport');
-  if(!viewport) return;
-
-  // Mouse events (desktop)
-  viewport.addEventListener('mouseenter', ()=>{
-    isHoveringPrizeTrack = true;
-  });
-  viewport.addEventListener('mouseleave', ()=>{
-    isHoveringPrizeTrack = false;
-    if(!slotRunning && lockedPrizeIdx === null){
-      startBoxRunning();
-    }
-  });
-
-  // Touch events (Android) — pause saat disentuh
-  viewport.addEventListener('touchstart', ()=>{
-    isHoveringPrizeTrack = true;
-  }, {passive: true});
-  viewport.addEventListener('touchend', ()=>{
-    isHoveringPrizeTrack = false;
-  }, {passive: true});
-
-  prizeHoverListenersAttached = true;
-}
-
-function startBoxRunning(){
-  stopBoxRunning();
-  setupPrizeHoverPause();
-  const viewport = document.getElementById('prize-track-viewport');
-  const grid     = document.getElementById('prize-grid');
-  if(!viewport || !grid || slotRunning || lockedPrizeIdx !== null) return;
-
-  const loopHeight = getLoopHeight(grid);
-  if(loopHeight <= 0) return; // tidak cukup konten untuk discroll
-
-  function step(){
-    if(slotRunning || lockedPrizeIdx !== null){
-      // Hentikan sepenuhnya — kondisi non-normal
-      boxRunRAF = null; return;
-    }
-    if(isHoveringPrizeTrack){
-      // Hover: jaga RAF tetap hidup tapi jangan scroll
-      boxRunRAF = requestAnimationFrame(step); return;
-    }
-    viewport.scrollTop += boxScrollSpeed;
-    // Loop berkelanjutan: begitu melewati satu salinan penuh, reset ke 0 tanpa jeda terlihat
-    if(viewport.scrollTop >= loopHeight){
-      viewport.scrollTop -= loopHeight;
-    }
-    boxRunRAF = requestAnimationFrame(step);
-  }
-  boxRunRAF = requestAnimationFrame(step);
-}
-// Helper: tinggi satu salinan (untuk loop). Jika ada duplikasi (genap & >1 entri),
-// ambil setengah scrollHeight; jika tidak ada duplikasi, gunakan tinggi penuh
-// dikurangi tinggi viewport (agar tetap bisa "loncat" balik halus saat mentok bawah).
-function getLoopHeight(grid){
-  const dupCount = grid.querySelectorAll('.prize-card[id$="-dup"]').length;
-  if(dupCount > 0){
-    return grid.scrollHeight / 2;
-  }
-  const viewport = document.getElementById('prize-track-viewport');
-  const max = grid.scrollHeight - (viewport ? viewport.clientHeight : 0);
-  return Math.max(0, max);
-}
-
-function stopBoxRunning(){
-  if(boxRunRAF){ cancelAnimationFrame(boxRunRAF); boxRunRAF = null; }
-}
-
-// ─── SIAP UNDI — Reel jackpot vertikal: highlight loncat antar kartu,
-// melambat, berhenti di pemenang, lalu scroll ke tengah viewport ──
-function siapUndi(){
-  const available = allHadiah
-    .map((h,i) => ({...h, idx: i}))
-    .filter(h => h.status !== 'Selesai' && h.tipe !== 'utama');
-  if(!available.length){
-    toast('Semua hadiah biasa sudah selesai diundi!','warn');
-    return;
-  }
-
-  const btn = document.getElementById('btn-siap-undi');
-  if(btn.disabled) return;
-  btn.disabled = true;
-  stopBoxRunning();
-
-  const viewport = document.getElementById('prize-track-viewport');
-  // Hanya kartu set asli (tanpa -dup) yang dipakai sebagai "reel" jackpot,
-  // supaya highlight tidak meloncat ke salinan duplikat.
-  const cards = Array.from(viewport.querySelectorAll('.prize-card:not(.done)'))
-    .filter(c => !c.id.endsWith('-dup'));
-
-  if(!cards.length){ btn.disabled = false; return; }
-
-  // Reset posisi scroll ke atas dulu agar reel selalu mulai dari titik yang konsisten
-  viewport.scrollTop = 0;
-
-  playDrum();
-
-  let reelPos = 0;
-  let spinCount = 0;
-  const totalSpins = 18 + Math.floor(Math.random() * 10);
-
-  function highlight(idx){
-    cards.forEach(c => c.classList.remove('prize-card-selected'));
-    cards[idx].classList.add('prize-card-reeling');
-    cards[idx].style.borderColor = '#C850C0';
-    cards[idx].style.boxShadow = '0 0 24px rgba(200,80,192,.4)';
-    // Auto-scroll viewport mengikuti posisi reel agar selalu terlihat (seperti jendela jackpot)
-    const targetScroll = cards[idx].offsetTop - (viewport.clientHeight - cards[idx].offsetHeight) / 2;
-    viewport.scrollTop = Math.max(0, targetScroll);
-  }
-  function clearHighlight(idx){
-    cards[idx].classList.remove('prize-card-reeling');
-    cards[idx].style.removeProperty('border-color');
-    cards[idx].style.removeProperty('box-shadow');
-  }
-
-  function tick(){
-    clearHighlight(reelPos);
-    reelPos = (reelPos + 1) % cards.length;
-    highlight(reelPos);
-    playTick();
-    spinCount++;
-
-    if(spinCount >= totalSpins){
-      clearHighlight(reelPos);
-      // Pick final winner & kunci hadiah lain sampai hadiah ini dapat pemenang
-      const winner = available[Math.floor(Math.random() * available.length)];
-      lockedPrizeIdx = winner.idx;
-      renderUndianList();
-
-      requestAnimationFrame(()=>{
-        const winCard = document.getElementById('prize-card-' + winner.idx);
-        if(winCard && viewport){
-          const targetScroll = winCard.offsetTop - (viewport.clientHeight - winCard.offsetHeight) / 2;
-          viewport.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
-        }
-      });
-      playFanfare();
-      toast(`🎯 Hadiah terpilih untuk diundi: ${winner.nama}`, 'success');
-      return;
-    }
-
-    // Kecepatan reel: cepat di awal (kesan putaran jackpot), melambat menjelang berhenti
-    const remaining = totalSpins - spinCount;
-    const delay = remaining > 6 ? 55 : 55 + (6 - remaining) * 45;
-    setTimeout(tick, delay);
-  }
-  highlight(reelPos);
-  setTimeout(tick, 55);
-}
-
-// ─── SLOT MACHINE — STOP MANUAL ──────────────────────────────
-// Alur baru:
-// 1. Minta pool teracak dari server
-// 2. Tampilkan animasi mengacak angka KK secara visual
-// 3. Latar belakang melintasi pool satu per satu
-// 4. Ketika STOP ditekan → ambil peserta yang sedang tampil
-// 5. Simpan ke server
-
-let slotTimerInterval = null;
-let slotPoolIdx       = 0;   // posisi saat ini di poolTerAcak
-let slotCurrentP      = null; // peserta yang saat ini ditampilkan
-
-async function mulaiUndian(namaHadiah, jumlah){
-  if(slotRunning) return;
-  slotRunning   = true;
-  stopRequested = false;
-  stopBoxRunning();
-
-  currentHadiahCtx = { namaHadiah, jumlah };
-
-  showLoading(true,'MENGAMBIL POOL PESERTA...');
-  const r = await gasCall('getPoolTerAcak');
-  showLoading(false);
-
-  if(!r.success){
-    slotRunning=false;
-    return toast('❌ '+r.message,'error');
-  }
-
-  // Lapisan client-side: micro-shuffle menggunakan crypto.getRandomValues()
-  // untuk memastikan bahwa urutan server tidak bisa diprediksi siapapun
-  poolTerAcak = clientSideShuffle(r.poolTerAcak);
-
-  // KEADILAN: mulai dari posisi acak menggunakan crypto.getRandomValues()
-  // sehingga peserta di indeks 0 tidak lebih sering muncul di awal animasi
-  const cryptoBuf = new Uint32Array(1);
-  crypto.getRandomValues(cryptoBuf);
-  slotPoolIdx = cryptoBuf[0] % poolTerAcak.length;
-
-  // Tampilkan kode audit sesi (untuk transparansi panitia)
-  if(r.sessionSeed){
-    const oldBadge = document.getElementById('slot-session-seed');
-    if(oldBadge) oldBadge.remove();
-    const badge = document.createElement('div');
-    badge.id = 'slot-session-seed';
-    badge.style.cssText = 'position:fixed;top:14px;right:60px;z-index:9999;background:rgba(10,26,13,.92);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:4px 12px;font-family:monospace;font-size:.75rem;color:#D4AF37;letter-spacing:.08em;';
-    badge.textContent = '\uD83D\uDD10 Sesi: ' + r.sessionSeed;
-    document.body.appendChild(badge);
-    setTimeout(()=>{ if(badge.parentNode) badge.remove(); }, 60000);
-  }
-
-  bukaSlotManual(namaHadiah, jumlah, r.totalPool);
-}
-
-function bukaSlotManual(namaHadiah, jumlah, totalPool){
-  const ov = document.getElementById('slot-overlay');
-  document.getElementById('slot-hadiah-label').textContent = '🎁 ' + namaHadiah;
-  document.getElementById('slot-title').textContent        = '✨ PENGUNDIAN DOORPRIZE ✨';
-  document.getElementById('slot-index-label').style.display = 'none';
-  document.getElementById('slot-kk').className             = '';
-  document.getElementById('slot-kk').textContent           = '• • • •  • • • •  • • • •  • • • •';
-  document.getElementById('slot-nama').textContent         = '';
-  document.getElementById('slot-kel').textContent          = '';
-  document.getElementById('slot-sisa').textContent         = `Pool aktif: ${totalPool} peserta`;
-  document.getElementById('slot-multi-list').style.display = 'none';
-  document.getElementById('slot-actions').innerHTML        = '';
-  document.getElementById('btn-stop-manual').style.display = 'inline-flex';
-  document.getElementById('slot-stop-info').style.display  = 'block';
-  ov.classList.add('show');
-
-  playDrum();
-
-  // Mulai animasi scroll — berganti cepat lintas peserta di pool
-  let tick = 0;
-  slotTimerInterval = setInterval(()=>{
-    if(stopRequested) return; // jangan update jika sudah distop
-
-    // Laju: mulai cepat (40ms → akan dikendalikan oleh interval ini)
-    // Setiap 60 tick, pindah ke peserta berikutnya di pool
-    // (pool sudah diacak server, jadi posisi STOP menentukan siapa terpilih)
-    tick++;
-    const p = poolTerAcak[slotPoolIdx % poolTerAcak.length];
-    slotCurrentP = p;
-
-    // Tampilkan digit acak bermirroring dgn KK peserta saat ini
-    // Agar tidak terbaca sebelum distop
-    if(tick % 3 === 0){
-      // Setiap 3 tick tampilkan sedikit digit nyata, sisanya acak
-      const kk    = String(p.noKK).replace(/\D/g,'');
-      const shown = Math.floor(Math.random() * 6); // 0-5 digit terbaca
-      const fakeKK = kk.slice(0,shown)
-        + Array.from({length:16-shown},()=>Math.floor(Math.random()*10)).join('');
-      document.getElementById('slot-kk').textContent  = fakeKK.replace(/(\d{4})(?=\d)/g,'$1 ');
-      document.getElementById('slot-nama').textContent = '...';
-      document.getElementById('slot-kel').textContent  = '';
+    const fn   = e.parameter.fn;
+    const args = e.parameter.args ? JSON.parse(e.parameter.args) : [];
+
+    // Whitelist fungsi yang boleh dipanggil dari luar
+    const allowed = [
+      'initSheets',
+      'getInitialData',
+      'getRefreshData',
+      'getSettings', 'saveSettings',
+      'getPeserta', 'uploadPeserta', 'tambahPeserta',
+      'hapusPeserta', 'hapusSemuaPeserta',
+      'getHadiah', 'simpanHadiah',
+      'getPoolTerAcak', 'lakukan_undian', 'simpanHasilStopManual',
+      'konfirmasiPemenang', 'batalkanPemenang',
+      'getRekap', 'getStatistik',
+      'resetPemenang', 'resetSemua',
+      'ping'
+    ];
+
+    if (!allowed.includes(fn)) {
+      result = { success: false, message: `Fungsi '${fn}' tidak diizinkan.` };
     } else {
-      // Angka acak penuh
-      const fake = Array.from({length:16},()=>Math.floor(Math.random()*10)).join('');
-      document.getElementById('slot-kk').textContent  = fake.replace(/(\d{4})(?=\d)/g,'$1 ');
-      document.getElementById('slot-nama').textContent = '...';
+      // Panggil fungsi dengan spread args
+      result = this[fn](...args);
     }
-
-    playTick();
-
-    // Geser ke peserta berikutnya
-    slotPoolIdx++;
-    if(slotPoolIdx >= poolTerAcak.length) slotPoolIdx = 0; // wrap around
-  }, 80); // 80ms per frame → ≈ 12.5 peserta/detik
-}
-
-// ── TOMBOL STOP ─────────────────────────────────────────────
-async function stopManual(){
-  if(!slotRunning || stopRequested) return;
-  stopRequested = true;
-
-  // Hentikan interval
-  clearInterval(slotTimerInterval);
-  slotTimerInterval = null;
-
-  playStopSound();
-
-  // Ambil peserta yang saat ini tampil sebagai "terpilih"
-  // Jika jumlah pemenang > 1, ambil sejumlah peserta dari posisi saat ini
-  const { namaHadiah, jumlah } = currentHadiahCtx;
-  const startIdx  = ((slotPoolIdx - 1) + poolTerAcak.length) % poolTerAcak.length;
-  const dipilih   = [];
-  const seen      = new Set();
-  for(let i=0; i<poolTerAcak.length && dipilih.length<jumlah; i++){
-    const p = poolTerAcak[(startIdx + i) % poolTerAcak.length];
-    if(!seen.has(p.noKK)){ dipilih.push(p); seen.add(p.noKK); }
+  } catch(err) {
+    result = { success: false, message: err.message };
   }
 
-  // Animasi reveal dramatis untuk peserta terpilih
-  document.getElementById('btn-stop-manual').style.display = 'none';
-  document.getElementById('slot-stop-info').style.display  = 'none';
-
-  if(dipilih.length === 1){
-    await animasiRevealFinal(dipilih[0], namaHadiah);
-  } else {
-    await animasiRevealMultiFinal(dipilih, namaHadiah);
-  }
-
-  // Simpan ke server
-  showLoading(true, 'MENYIMPAN HASIL...');
-  const r = await gasCall('simpanHasilStopManual', namaHadiah, dipilih);
-  showLoading(false);
-
-  if(!r.success){
-    toast('⚠️ Gagal menyimpan: '+r.message, 'error');
-  } else {
-    toast(`✅ ${r.saved} pemenang berhasil disimpan`, 'success');
-  }
-
-  // Tampilkan aksi
-  if(dipilih.length===1){
-    renderSlotActions(dipilih[0], namaHadiah);
-  } else {
-    renderSlotActionsMulti(dipilih, namaHadiah);
-  }
+  // Kembalikan sebagai JSON — GAS doGet otomatis mengizinkan cross-origin
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ── ANIMASI REVEAL SETELAH STOP ─────────────────────────────
-function animasiRevealFinal(p, namaHadiah){
-  return new Promise(resolve=>{
-    const elKK   = document.getElementById('slot-kk');
-    const elNama = document.getElementById('slot-nama');
-    const elKel  = document.getElementById('slot-kel');
-    const elIdx  = document.getElementById('slot-index-label');
-    elIdx.style.display = 'block';
-
-    elIdx.textContent = '⏹ BERHENTI... mengungkap pemenang';
-
-    const kk      = String(p.noKK).replace(/\D/g,'');
-    const steps   = [0,2,4,6,8,10,12,14,16];
-    const delays  = [200,300,350,400,450,500,550,600,700];
-
-    function revealStep(i){
-      if(i >= steps.length){
-        // Final
-        elKK.textContent      = formatNoKK(p.noKK);
-        elKK.className        = 'final';
-        elNama.textContent    = p.nama || '—';
-        elKel.textContent     = p.kelurahan ? '📍 '+p.kelurahan : '';
-        elIdx.textContent     = '🏆 PEMENANG TERPILIH';
-        playFanfare();
-        resolve();
-        return;
-      }
-      setTimeout(()=>{
-        const shown   = steps[i];
-        const fakeKK  = kk.slice(0,shown) + Array.from({length:16-shown},()=>Math.floor(Math.random()*10)).join('');
-        elKK.textContent = fakeKK.replace(/(\d{4})(?=\d)/g,'$1 ');
-        playSlowTick(600+i*60);
-        revealStep(i+1);
-      }, delays[i]);
-    }
-    revealStep(0);
-  });
+// ------------------------------------------------------------
+// PING — hanya untuk pre-warm / keep-alive GAS cold start
+// Dipanggil frontend saat user hover tombol Undi agar GAS
+// sudah "hangat" ketika tombol benar-benar diklik.
+// ------------------------------------------------------------
+function ping() {
+  return { success: true, ts: Date.now() };
 }
 
-function animasiRevealMultiFinal(pemenang, namaHadiah){
-  return new Promise(async resolve=>{
-    document.getElementById('slot-index-label').textContent = `⏹ ${pemenang.length} pemenang terpilih!`;
-
-    for(let i=0; i<pemenang.length; i++){
-      document.getElementById('slot-index-label').textContent = `Mengungkap pemenang ${i+1} dari ${pemenang.length}...`;
-      await animasiRevealFinal(pemenang[i], namaHadiah);
-      if(i < pemenang.length-1) await new Promise(r=>setTimeout(r,1200));
-    }
-
-    // Tampilkan semua dalam list
-    const listEl = document.getElementById('slot-multi-list');
-    listEl.style.display = 'block';
-    listEl.innerHTML = pemenang.map((p,i)=>`
-      <div class="multi-item">
-        <span class="hadiah-num" style="width:36px;height:36px;font-size:.9rem">${i+1}</span>
-        <span class="mkk">${formatNoKK(p.noKK)}</span>
-        <span class="mnm">${p.nama||'—'}</span>
-      </div>`).join('');
-    document.getElementById('slot-kk').textContent    = `${pemenang.length} Pemenang`;
-    document.getElementById('slot-kk').className      = 'final';
-    document.getElementById('slot-nama').textContent  = '';
-    document.getElementById('slot-index-label').textContent = '🏆 SEMUA PEMENANG';
-    resolve();
-  });
-}
-
-// ── RENDER AKSI SETELAH SLOT BERHENTI ───────────────────────
-function renderSlotActions(p, namaHadiah){
-  document.getElementById('slot-actions').innerHTML=`
-    <button class="btn btn-green btn-lg" onclick="konfirmasiHadir('${p.noKK}','${escStr(namaHadiah)}')">✅ Konfirmasi Hadir</button>
-    <button class="btn btn-red btn-lg"   onclick="konfirmasiTidakHadir('${p.noKK}','${escStr(namaHadiah)}')">❌ Tidak Hadir</button>
-    <button class="btn btn-dark btn-lg"  onclick="tutupSlot()">Tutup</button>`;
-}
-function renderSlotActionsMulti(pemenang, namaHadiah){
-  const pJSON = encodeURIComponent(JSON.stringify(pemenang));
-  document.getElementById('slot-actions').innerHTML=`
-    <button class="btn btn-green btn-lg" onclick="konfirmasiSemuaHadir(decodeJSON('${pJSON}'),'${escStr(namaHadiah)}')">✅ Konfirmasi Semua Hadir</button>
-    <button class="btn btn-dark btn-lg"  onclick="tutupSlot()">Tutup</button>`;
-}
-function decodeJSON(s){ return JSON.parse(decodeURIComponent(s)); }
-
-function tutupSlot(){
-  clearInterval(slotTimerInterval);
-  slotTimerInterval = null;
-  slotRunning   = false;
-  stopRequested = false;
-  document.getElementById('slot-overlay').classList.remove('show');
-  document.getElementById('btn-stop-manual').style.display = 'none';
-  document.getElementById('slot-stop-info').style.display  = 'none';
-  refreshAll(); // 1 request gabungan ganti 3
-}
-
-// ─── KONFIRMASI PEMENANG ─────────────────────────────────────
-async function konfirmasiHadir(noKK, namaHadiah){
-  showLoading(true,'MENYIMPAN...');
-  await gasCall('konfirmasiPemenang', noKK, 'Hadir', '');
-  showLoading(false);
-  tutupSlot();
-  toast('Konfirmasi hadir disimpan ✅','success');
-}
-async function konfirmasiTidakHadir(noKK, namaHadiah){
-  if(!confirm(`Tandai peserta ini sebagai Tidak Hadir?\n\n⚠️ Peserta akan DIELIMINASI dari undian selanjutnya.\n✅ Hadiah ini bisa DIUNDI ULANG untuk peserta lain.`)) return;
-  showLoading(true,'MEMPROSES...');
-  await gasCall('batalkanPemenang', noKK, namaHadiah);
-  showLoading(false);
-  tutupSlot();
-  toast('Peserta dieliminasi — hadiah bisa diundi ulang','warn');
-}
-async function konfirmasiSemuaHadir(pemenang, namaHadiah){
-  showLoading(true,'MENYIMPAN...');
-  // Parallelkan konfirmasi semua pemenang sekaligus (bukan serial)
-  await Promise.all(pemenang.map(p=>gasCall('konfirmasiPemenang', p.noKK, 'Hadir', '')));
-  showLoading(false);
-  tutupSlot();
-  toast('Semua pemenang dikonfirmasi hadir ✅','success');
-}
-
-// Shortcut keyboard (desktop) — tidak mempengaruhi Android
-document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){
-    if(currentPanel) { closePanel(); return; }
-    if(!slotRunning) tutupSlot();
-  }
-  if(e.key===' ' && slotRunning && !stopRequested){
-    e.preventDefault();
-    stopManual();
-  }
-});
-
-// ─── CONFETTI ────────────────────────────────────────────────
-function buatConfetti(){
-  const box    = document.getElementById('confetti-box');
-  box.innerHTML = '';
-  const colors = ['#FFD700','#FFE55C','#00D94A','#fff','#FFA533','#6BFFAA','#00FFD4','#FFF3A3','#A7F3D0'];
-  // Android: kurangi dari 150 → 60 partikel untuk menghindari jank paint
-  const count = isTouchDevice ? 60 : 150;
-  for(let i=0;i<count;i++){
-    const el = document.createElement('div');
-    el.className = 'confetti-piece';
-    el.style.cssText=`
-      left:${Math.random()*100}%;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      animation-duration:${2+Math.random()*2.5}s;
-      animation-delay:${Math.random()*2}s;
-      width:${8+Math.random()*12}px; height:${10+Math.random()*16}px;
-      transform:rotate(${Math.random()*360}deg);
-      border-radius:${Math.random()<.3?'50%':'2px'};`;
-    box.appendChild(el);
-  }
-  setTimeout(()=>box.innerHTML='', 7000);
-}
-
-// ─── REKAP ───────────────────────────────────────────────────
-function applyRekap(data){
-  allRekap = data||[];
-  renderRekap(allRekap);
-  renderPemenangToday(allRekap);
-}
-async function loadRekap(){
-  const cached = cacheGet(CACHE_KEY_REKAP);
-  if(cached) applyRekap(cached);          // tampil instan dari cache
-  const r = await gasCall('getRekap');
-  const fresh = r.data||[];
-  cacheSet(CACHE_KEY_REKAP, fresh);
-  applyRekap(fresh);
-  applyStats(await gasCall('getStatistik'));
-}
-function renderRekap(data){
-  const container = document.getElementById('rekap-per-hadiah');
-  if(!data.length){
-    container.innerHTML='<p style="color:var(--muted);text-align:center;padding:36px;font-size:1rem">Belum ada pemenang.</p>';
-    return;
-  }
-  const byHadiah = {};
-  data.forEach(d=>{ if(!byHadiah[d.hadiah]) byHadiah[d.hadiah]=[]; byHadiah[d.hadiah].push(d); });
-  container.innerHTML = Object.entries(byHadiah).map(([hadiah,items])=>`
-    <div style="margin-bottom:24px">
-      <h3 style="color:var(--gold2);font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:10px">
-        🎁 ${hadiah} <span class="badge badge-teal">${items.length} pemenang</span>
-      </h3>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>#</th><th>No KK</th><th>Nama</th><th>Alamat</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead>
-          <tbody>
-            ${items.map((d,i)=>`<tr>
-              <td style="color:var(--muted)">${i+1}</td>
-              <td><code style="font-size:.88rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td>
-              <td style="font-weight:700">${d.nama||'—'}</td>
-              <td>${d.kelurahan||'—'}</td>
-              <td style="font-size:.85rem;color:var(--muted)">${d.waktu||'—'}</td>
-              <td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':d.konfirmasi==='Tidak Hadir'?'badge-red':d.konfirmasi==='Terpilih'?'badge-orange':'badge-muted'}">${d.konfirmasi||'—'}</span></td>
-              <td>
-                ${d.konfirmasi==='Terpilih'?`
-                  <button class="btn btn-green btn-sm" onclick="konfirmasiHadir('${d.noKK}','${escStr(d.hadiah)}')">✅ Hadir</button>
-                  <button class="btn btn-red btn-sm"   onclick="konfirmasiTidakHadir('${d.noKK}','${escStr(d.hadiah)}')">❌ Tidak</button>
-                ` : ''}
-              </td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`).join('');
-}
-function renderPemenangToday(data){
-  const tb = document.getElementById('tbody-pemenang-today');
-  if(!data.length){
-    tb.innerHTML='<tr class="empty-row"><td colspan="7">Belum ada pemenang.</td></tr>';
-    return;
-  }
-  tb.innerHTML = data.map((d,i)=>`<tr>
-    <td style="color:var(--muted);font-size:.85rem">${i+1}</td>
-    <td><span class="badge badge-gold">${d.hadiah}</span></td>
-    <td><code style="font-size:.88rem;color:var(--gold2)">${formatNoKK(d.noKK)}</code></td>
-    <td style="font-weight:700">${d.nama||'—'}</td>
-    <td>${d.kelurahan||'—'}</td>
-    <td><span class="badge ${d.konfirmasi==='Hadir'?'badge-green':d.konfirmasi==='Tidak Hadir'?'badge-red':d.konfirmasi==='Terpilih'?'badge-orange':'badge-muted'}">${d.konfirmasi||'—'}</span></td>
-    <td style="display:flex;gap:6px;flex-wrap:wrap">
-      ${d.konfirmasi==='Terpilih'?`<button class="btn btn-green btn-sm" onclick="konfirmasiHadir('${d.noKK}','${escStr(d.hadiah)}')">✅</button><button class="btn btn-red btn-sm" onclick="konfirmasiTidakHadir('${d.noKK}','${escStr(d.hadiah)}')">❌</button>`:'' }
-    </td>
-  </tr>`).join('');
-}
-
-// ─── EXPORT ──────────────────────────────────────────────────
-function exportCSV(){
-  if(!allRekap.length) return toast('Belum ada data rekap','warn');
-  const header = 'No,Hadiah,No KK,Nama,Kelurahan,Waktu,Konfirmasi\n';
-  const rows   = allRekap.map((d,i)=>
-    `${i+1},"${d.hadiah}","${d.noKK}","${d.nama}","${d.kelurahan||''}","${d.waktu}","${d.konfirmasi}"`).join('\n');
-  const blob = new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
-  const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'),{
-    href:url,
-    download:`rekap-doorprize-${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.csv`
-  });
-  a.click();
-  toast('File CSV berhasil didownload','success');
-}
-function printRekap(){ window.print(); }
-
-// ─── RESET ───────────────────────────────────────────────────
-async function resetPemenangKonfirmasi(){
-  if(!confirm('Reset semua data pemenang? Peserta akan kembali ke pool.')) return;
-  showLoading(true,'MERESET...');
-  await gasCall('resetPemenang');
-  showLoading(false);
-  toast('Data pemenang direset','warn');
-  cacheClear();
-  refreshAll();
-}
-async function resetSemuaKonfirmasi(){
-  if(!confirm('⚠️ RESET SEMUA DATA? Peserta, hadiah, dan pemenang akan terhapus!')) return;
-  if(!confirm('Tindakan ini TIDAK BISA DIBATALKAN. Lanjutkan?')) return;
-  showLoading(true,'MERESET SEMUA...');
-  await gasCall('resetSemua');
-  showLoading(false);
-  allPeserta=[]; allHadiah=[]; allRekap=[];
-  cacheClear();
-  toast('Semua data direset','warn');
-  loadPeserta();
-  refreshAll();
-}
-
-// ─── PAGE VISIBILITY — Pause semua RAF saat tab tidak aktif ──
-// Penting di Android: tab background tetap menguras baterai dan
-// menyebabkan jank saat kembali ke foreground jika RAF terus jalan.
-document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden){
-    stopBoxRunning();
-    stopGrandMarquee();
-  } else {
-    // Kembali ke foreground — restart animasi yang aktif
-    if(!slotRunning && lockedPrizeIdx === null) startBoxRunning();
-    if(grandMarqueeEnabled) startGrandMarquee();
-  }
-});
-
-// ─── INIT ────────────────────────────────────────────────────
-// Pre-warm GAS saat mouse mendekati tombol Undi —
-// mengurangi cold-start delay ketika tombol benar-benar diklik.
-let gasWarmed = false;
-function warmGas(){
-  if(gasWarmed) return;
-  gasWarmed = true;
-  gasCall('ping').catch(()=>{});
-}
-// Pasang listener pre-warm di tombol Undi Sekarang & Siap Undi
-// Desktop: mouseover | Android: touchstart
-function warmGasOnTarget(e){
-  const t = e.target.closest('button');
-  if(!t) return;
-  const txt = t.textContent||'';
-  if(txt.includes('Undi') || txt.includes('Siap')) warmGas();
-}
-document.addEventListener('mouseover',   warmGasOnTarget, {passive:true});
-document.addEventListener('touchstart',  warmGasOnTarget, {passive:true});
-
-window.onload = async () => {
-  showLoading(true,'MEMUAT APLIKASI...');
-
-  // ── Tampilkan cache dulu (0ms) ──────────────────────────────
-  const cachedSettings = cacheGet(CACHE_KEY_SETTINGS);
-  const cachedHadiah   = cacheGet(CACHE_KEY_HADIAH);
-  const cachedRekap    = cacheGet(CACHE_KEY_REKAP);
-  if(cachedSettings) applySettingsData(cachedSettings);
-  if(cachedHadiah)   applyHadiah(cachedHadiah);
-  if(cachedRekap)    applyRekap(cachedRekap);
-  // Jika semua cache ada, sembunyikan loading lebih awal
-  if(cachedSettings && cachedHadiah && cachedRekap){
-    showLoading(false);
-    toast('Memuat data terbaru…','info');
-  }
-
-  // ── 1 request gabungan ke GAS ──────────────────────────────
+// ------------------------------------------------------------
+// GET INITIAL DATA — satu request untuk load awal aplikasi
+// Menggabungkan: initSheets + getSettings + getHadiah +
+//                getRekap + getStatistik
+// Menghemat 4 round-trip menjadi 1 saat pertama kali buka.
+// ------------------------------------------------------------
+function getInitialData() {
   try {
-    const r = await gasCall('getInitialData');
-    if(r.success){
-      cacheSet(CACHE_KEY_SETTINGS, r.settings);
-      cacheSet(CACHE_KEY_HADIAH,   r.hadiah);
-      cacheSet(CACHE_KEY_REKAP,    r.rekap);
-      applySettingsData(r.settings);
-      applyHadiah(r.hadiah);
-      applyRekap(r.rekap);
-      applyStats(r.statistik);
+    initSheets();
+    const settings   = getSettings();
+    const hadiah     = getHadiah();
+    const rekap      = getRekap();
+    const statistik  = getStatistik();
+    return {
+      success:   true,
+      settings:  settings.data   || {},
+      hadiah:    hadiah.data     || [],
+      rekap:     rekap.data      || [],
+      statistik: statistik
+    };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// GET REFRESH DATA — satu request untuk refresh pasca-aksi
+// Menggabungkan: getHadiah + getRekap + getStatistik
+// Dipakai setelah konfirmasi pemenang / tutup slot / closePanel
+// agar tidak perlu 3 round-trip terpisah.
+// ------------------------------------------------------------
+function getRefreshData() {
+  try {
+    const hadiah    = getHadiah();
+    const rekap     = getRekap();
+    const statistik = getStatistik();
+    return {
+      success:   true,
+      hadiah:    hadiah.data  || [],
+      rekap:     rekap.data   || [],
+      statistik: statistik
+    };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// INISIALISASI SPREADSHEET
+// ------------------------------------------------------------
+function initSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  function getOrCreate(name, headers, colors) {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+      sheet.appendRow(headers);
+      const hdr = sheet.getRange(1, 1, 1, headers.length);
+      hdr.setFontWeight('bold')
+         .setBackground(colors || '#0d2b1a')
+         .setFontColor('#D4AF37');
+      sheet.setFrozenRows(1);
     }
-  } catch(err){
-    toast('Gagal terhubung ke server: '+err.message,'error');
+    return sheet;
   }
 
-  showLoading(false);
-  toast('Aplikasi siap digunakan 🌙','success');
-  // Pre-warm di background agar request pertama lebih cepat
-  setTimeout(()=>{ gasWarmed=true; gasCall('ping').catch(()=>{}); }, 2000);
-};
-</script>
-</body>
-</html>
+  getOrCreate(SHEET_PESERTA,   ['No','No KK','Nama Kepala Keluarga','Kelurahan','RT','RW','Status','Tgl Upload']);
+  getOrCreate(SHEET_HADIAH,    ['No','Nama Hadiah','Deskripsi','Sponsor','Jumlah Pemenang','Status','Urutan','Tipe']);
+  getOrCreate(SHEET_PEMENANG,  ['No','Nama Hadiah','No KK Pemenang','Nama Pemenang','Kelurahan','Waktu','Konfirmasi','Catatan']);
+  getOrCreate(SHEET_SETTINGS,  ['Key','Value']);
+  getOrCreate(SHEET_ELIMINASI, ['No','No KK','Nama','Hadiah Asal','Alasan','Tanggal']);
+
+  const stSheet = ss.getSheetByName(SHEET_SETTINGS);
+  const stData  = stSheet.getDataRange().getValues();
+  const keys    = stData.map(r => r[0]);
+  const defaults = {
+    'nama_acara':      'Perayaan Tahun Baru Islam 1447 H',
+    'nama_panitia':    'Panitia Perayaan Muharram',
+    'nama_organisasi': 'DKM / Kelurahan',
+    'lokasi':          '',
+    'tahun_hijriah':   '1447 H',
+    'tema':            'Hijrah Menuju Kebaikan',
+  };
+  Object.entries(defaults).forEach(([k, v]) => {
+    if (!keys.includes(k)) stSheet.appendRow([k, v]);
+  });
+
+  return { success: true };
+}
+
+// ------------------------------------------------------------
+// SETTINGS
+// ------------------------------------------------------------
+function getSettings() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_SETTINGS);
+    if (!sheet) return { success: true, data: {} };
+    const rows = sheet.getDataRange().getValues();
+    const data = {};
+    rows.forEach(r => { if (r[0]) data[r[0]] = r[1]; });
+    return { success: true, data };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function saveSettings(obj) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_SETTINGS);
+    const rows  = sheet.getDataRange().getValues();
+    Object.entries(obj).forEach(([k, v]) => {
+      const idx = rows.findIndex(r => r[0] === k);
+      if (idx >= 0) sheet.getRange(idx + 1, 2).setValue(v);
+      else sheet.appendRow([k, v]);
+    });
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// PESERTA — upload bulk
+// ------------------------------------------------------------
+function uploadPeserta(rows) {
+  try {
+    initSheets();
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    const last  = sheet.getLastRow();
+    const existing = new Set();
+    if (last > 1) {
+      sheet.getRange(2, 2, last - 1, 1).getValues()
+           .forEach(r => existing.add(String(r[0]).trim()));
+    }
+
+    let added = 0, dupes = 0, invalid = 0;
+    const now = new Date().toLocaleString('id-ID');
+    rows.forEach(row => {
+      const noKK = String(row[0]).replace(/\D/g,'').trim();
+      const nama = String(row[1] || '').trim();
+      const kel  = String(row[2] || '').trim();
+      const rt   = String(row[3] || '').trim();
+      const rw   = String(row[4] || '').trim();
+      if (noKK.length !== 16) { invalid++; return; }
+      if (existing.has(noKK))  { dupes++;   return; }
+      const no = sheet.getLastRow();
+      sheet.appendRow([no, noKK, nama, kel, rt, rw, 'Aktif', now]);
+      existing.add(noKK);
+      added++;
+    });
+    return { success: true, added, dupes, invalid };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function tambahPeserta(noKK, nama, kelurahan, rt, rw) {
+  return uploadPeserta([[noKK, nama, kelurahan||'', rt||'', rw||'']]);
+}
+
+// ------------------------------------------------------------
+// PESERTA — get / hapus
+// ------------------------------------------------------------
+function getPeserta() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    if (!sheet) return { success: true, data: [] };
+    const last = sheet.getLastRow();
+    if (last < 2) return { success: true, data: [] };
+    const rows = sheet.getRange(2, 1, last - 1, 8).getValues();
+    const data = rows
+      .filter(r => r[6] === 'Aktif' && String(r[1]).trim())
+      .map(r => ({ no: r[0], noKK: r[1], nama: r[2], kelurahan: r[3], rt: r[4], rw: r[5] }));
+    return { success: true, data, total: rows.filter(r=>String(r[1]).trim()).length };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function hapusPeserta(noKK) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    const last  = sheet.getLastRow();
+    if (last < 2) return { success: false };
+    const vals = sheet.getRange(2, 2, last-1, 1).getValues();
+    for (let i = vals.length-1; i >= 0; i--) {
+      if (String(vals[i][0]).trim() === String(noKK).trim())
+        sheet.getRange(i+2, 7).setValue('Dihapus');
+    }
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function hapusSemuaPeserta() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    const last  = sheet.getLastRow();
+    if (last > 1) sheet.getRange(2, 7, last-1, 1).setValue('Dihapus');
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// HADIAH
+// ------------------------------------------------------------
+function simpanHadiah(list) {
+  try {
+    initSheets();
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_HADIAH);
+    const last  = sheet.getLastRow();
+    if (last > 1) sheet.deleteRows(2, last-1);
+    list.forEach((h, i) => {
+      sheet.appendRow([i+1, h.nama, h.deskripsi||'', h.sponsor||'', h.jumlah||1, h.status||'Belum', i+1, h.tipe||'biasa']);
+    });
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function getHadiah() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_HADIAH);
+    if (!sheet) return { success: true, data: [] };
+    const last = sheet.getLastRow();
+    if (last < 2) return { success: true, data: [] };
+    const rows = sheet.getRange(2, 1, last-1, 8).getValues();
+    const data = rows.map(r => ({
+      no: r[0], nama: r[1], deskripsi: r[2], sponsor: r[3],
+      jumlah: r[4], status: r[5], urutan: r[6],
+      tipe: r[7] || 'biasa'   // kolom ke-8: 'utama' atau 'biasa' (default 'biasa')
+    }));
+    return { success: true, data };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function updateStatusHadiah(namaHadiah, status) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_HADIAH);
+    const last  = sheet.getLastRow();
+    if (last < 2) return { success: false };
+    const vals = sheet.getRange(2, 2, last-1, 1).getValues();
+    for (let i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]).trim() === namaHadiah)
+        sheet.getRange(i+2, 6).setValue(status);
+    }
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// PENGACAKAN KUAT — Multi-pass Fisher-Yates + Entropy Salt
+// Menggunakan entropy berlapis agar tidak deterministik:
+//   • Utilitas Mulberry32 PRNG dari seed campuran
+//   • Salt dari timestamp + hash ringan data peserta
+//   • 3 pass Fisher-Yates bolak-balik untuk menghapus bias urutan
+// ------------------------------------------------------------
+
+/** Hash ringan (djb2) dari string untuk membuat salt */
+function djb2Hash(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash = hash >>> 0; // konversi ke unsigned 32-bit
+  }
+  return hash;
+}
+
+/** Mulberry32 — PRNG berkualitas tinggi dari seed integer */
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Membuat seed entropy kuat dari:
+ * - timestamp nanosecond (setiap sesi berbeda)
+ * - hash dari noKK seluruh peserta (terikat pada data aktual)
+ * - Math.random() sebagai lapisan tambahan
+ */
+function buatSeedEntropy(pool) {
+  const ts       = Date.now();
+  const noKKStr  = pool.slice(0, 50).map(p => p.noKK).join('');
+  const dataHash = djb2Hash(noKKStr + ts);
+  const rndSalt  = Math.floor(Math.random() * 0xFFFFFFFF);
+  // XOR tiga sumber entropy
+  return (dataHash ^ rndSalt ^ (ts & 0xFFFFFFFF)) >>> 0;
+}
+
+/**
+ * Fisher-Yates 3-pass dengan PRNG Mulberry32
+ * Pass 1: mundur (n-1 → 0)  — standar
+ * Pass 2: maju  (0 → n-2)   — menghapus sisa bias
+ * Pass 3: mundur dengan offset tengah — memastikan distribusi seragam
+ */
+function kuatFisherYates(arr, rng) {
+  const shuffled = [...arr];
+  const n = shuffled.length;
+  const rand = rng || Math.random;
+
+  // Pass 1: backward Fisher-Yates
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  // Pass 2: forward Fisher-Yates
+  for (let i = 0; i < n - 1; i++) {
+    const j = i + Math.floor(rand() * (n - i));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  // Pass 3: backward dari titik tengah
+  const mid = Math.floor(n / 2);
+  for (let i = n - 1; i > mid; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// ------------------------------------------------------------
+// STRATIFIED SHUFFLE — Peluang adil antar kelurahan
+// Menggunakan PRNG Mulberry32 + randomized start offset
+// agar tidak ada bias posisi (awal/tengah/akhir pool)
+// ------------------------------------------------------------
+function stratifiedShuffle(pool) {
+  if (!pool.length) return [];
+
+  // Buat PRNG dari seed entropy kuat
+  const seed = buatSeedEntropy(pool);
+  const rng  = mulberry32(seed);
+
+  // Kelompokkan per kelurahan
+  const groups = {};
+  pool.forEach(p => {
+    const kel = (p.kelurahan || 'TANPA_KELURAHAN').trim().toUpperCase();
+    if (!groups[kel]) groups[kel] = [];
+    groups[kel].push(p);
+  });
+
+  // Acak isi setiap kelurahan (3-pass)
+  const kelKeys = Object.keys(groups);
+  kelKeys.forEach(k => { groups[k] = kuatFisherYates(groups[k], rng); });
+
+  // Acak urutan kelurahan itu sendiri (3-pass)
+  const shuffledKeys = kuatFisherYates(kelKeys, rng);
+
+  // Interleave round-robin: ambil 1 dari tiap kelurahan bergantian
+  const result  = [];
+  const indices = {};
+  shuffledKeys.forEach(k => { indices[k] = 0; });
+  let habis = 0;
+  while (habis < shuffledKeys.length) {
+    for (const k of shuffledKeys) {
+      if (indices[k] >= groups[k].length) continue;
+      result.push(groups[k][indices[k]]);
+      indices[k]++;
+      if (indices[k] >= groups[k].length) habis++;
+    }
+  }
+
+  // KUNCI KEADILAN: randomized start offset
+  // Pool dirotasi ke titik awal yang acak sehingga peserta
+  // di posisi mana pun (awal/tengah/akhir spreadsheet)
+  // memiliki peluang muncul di awal animasi yang sama.
+  const offset = Math.floor(rng() * result.length);
+  const rotated = [
+    ...result.slice(offset),
+    ...result.slice(0, offset)
+  ];
+
+  return rotated;
+}
+
+// ------------------------------------------------------------
+// AMBIL POOL KANDIDAT (untuk fitur stop manual di frontend)
+// ------------------------------------------------------------
+function getPoolTerAcak() {
+  try {
+    const resPeserta = getPeserta();
+    if (!resPeserta.success || !resPeserta.data.length)
+      return { success: false, message: 'Tidak ada peserta aktif.' };
+
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetP = ss.getSheetByName(SHEET_PEMENANG);
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+
+    const dikecualikan = new Set();
+    if (sheetP && sheetP.getLastRow() > 1) {
+      sheetP.getRange(2, 3, sheetP.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+    if (sheetE && sheetE.getLastRow() > 1) {
+      sheetE.getRange(2, 2, sheetE.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+
+    const pool = resPeserta.data.filter(
+      p => !dikecualikan.has(String(p.noKK).trim())
+    );
+
+    if (!pool.length)
+      return { success: false, message: 'Tidak ada peserta yang tersisa di pool.' };
+
+    const poolTerAcak = stratifiedShuffle(pool);
+
+    // sessionSeed: hash pendek untuk keperluan audit/transparansi
+    // Panitia dapat mencatat kode ini sebagai bukti sesi undian yang unik
+    const auditHash = djb2Hash(
+      poolTerAcak.slice(0,10).map(p=>p.noKK).join('') + Date.now()
+    ).toString(16).toUpperCase().slice(0,8);
+
+    return {
+      success:      true,
+      poolTerAcak,
+      totalPool:    pool.length,
+      totalTerpilih: dikecualikan.size,
+      sessionSeed:  auditHash   // kode audit sesi (8 karakter hex)
+    };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// UNDIAN
+// ------------------------------------------------------------
+function lakukan_undian(namaHadiah, jumlahPemenang) {
+  try {
+    const resPeserta = getPeserta();
+    if (!resPeserta.success || !resPeserta.data.length)
+      return { success: false, message: 'Tidak ada peserta aktif.' };
+
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetP = ss.getSheetByName(SHEET_PEMENANG);
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+
+    const dikecualikan = new Set();
+    if (sheetP && sheetP.getLastRow() > 1) {
+      sheetP.getRange(2, 3, sheetP.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+    if (sheetE && sheetE.getLastRow() > 1) {
+      sheetE.getRange(2, 2, sheetE.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+
+    const pool = resPeserta.data.filter(
+      p => !dikecualikan.has(String(p.noKK).trim())
+    );
+
+    if (pool.length < jumlahPemenang)
+      return {
+        success: false,
+        message: `Sisa peserta (${pool.length}) kurang dari jumlah pemenang (${jumlahPemenang}).`
+      };
+
+    const shuffled = stratifiedShuffle(pool);
+    const pemenang = shuffled.slice(0, jumlahPemenang);
+
+    const waktu = new Date().toLocaleString('id-ID');
+    pemenang.forEach(p => {
+      const no = sheetP ? sheetP.getLastRow() : 1;
+      sheetP.appendRow([no, namaHadiah, p.noKK, p.nama, p.kelurahan||'', waktu, 'Terpilih', '']);
+    });
+
+    updateStatusHadiah(namaHadiah, 'Selesai');
+
+    return {
+      success:  true,
+      pemenang,
+      sisaPool: pool.length - jumlahPemenang
+    };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// SIMPAN HASIL STOP MANUAL
+// ------------------------------------------------------------
+function simpanHasilStopManual(namaHadiah, pemenang) {
+  try {
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetP = ss.getSheetByName(SHEET_PEMENANG);
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+
+    const dikecualikan = new Set();
+    if (sheetP && sheetP.getLastRow() > 1) {
+      sheetP.getRange(2, 3, sheetP.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+    if (sheetE && sheetE.getLastRow() > 1) {
+      sheetE.getRange(2, 2, sheetE.getLastRow()-1, 1)
+            .getValues().forEach(r => dikecualikan.add(String(r[0]).trim()));
+    }
+
+    const waktu = new Date().toLocaleString('id-ID');
+    let saved = 0;
+    pemenang.forEach(p => {
+      if (dikecualikan.has(String(p.noKK).trim())) return;
+      const no = sheetP.getLastRow();
+      sheetP.appendRow([no, namaHadiah, p.noKK, p.nama, p.kelurahan||'', waktu, 'Terpilih', 'Stop Manual']);
+      dikecualikan.add(String(p.noKK).trim());
+      saved++;
+    });
+
+    updateStatusHadiah(namaHadiah, 'Selesai');
+
+    const resPeserta = getPeserta();
+    const sisaPool = (resPeserta.data || []).filter(
+      p => !dikecualikan.has(String(p.noKK).trim())
+    ).length;
+
+    return { success: true, saved, sisaPool };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// KONFIRMASI PEMENANG
+// ------------------------------------------------------------
+function konfirmasiPemenang(noKK, status, catatan) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PEMENANG);
+    const last  = sheet.getLastRow();
+    if (last < 2) return { success: false };
+    const vals = sheet.getRange(2, 3, last-1, 1).getValues();
+    for (let i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]).trim() === String(noKK).trim()) {
+        sheet.getRange(i+2, 7).setValue(status);
+        if (catatan) sheet.getRange(i+2, 8).setValue(catatan);
+      }
+    }
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function batalkanPemenang(noKK, namaHadiah) {
+  try {
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetP = ss.getSheetByName(SHEET_PEMENANG);
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+    const lastP  = sheetP.getLastRow();
+    if (lastP < 2) return { success: false };
+
+    const vals  = sheetP.getRange(2, 1, lastP-1, 8).getValues();
+    let namaPeserta = '';
+
+    for (let i = vals.length-1; i >= 0; i--) {
+      if (String(vals[i][2]).trim() === String(noKK).trim()) {
+        namaPeserta = vals[i][3] || '';
+        sheetP.deleteRow(i+2);
+      }
+    }
+
+    const waktu = new Date().toLocaleString('id-ID');
+    const noE   = sheetE ? sheetE.getLastRow() : 1;
+    sheetE.appendRow([noE, String(noKK).trim(), namaPeserta, namaHadiah || '', 'Tidak Hadir', waktu]);
+
+    const lastPNew = sheetP.getLastRow();
+    let masihAdaPemenangLain = false;
+    if (lastPNew > 1) {
+      const valsNew = sheetP.getRange(2, 2, lastPNew-1, 1).getValues();
+      masihAdaPemenangLain = valsNew.some(r => String(r[0]).trim() === namaHadiah);
+    }
+
+    if (!masihAdaPemenangLain && namaHadiah) {
+      updateStatusHadiah(namaHadiah, 'Belum');
+    }
+
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// REKAP
+// ------------------------------------------------------------
+function getRekap() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PEMENANG);
+    if (!sheet) return { success: true, data: [] };
+    const last = sheet.getLastRow();
+    if (last < 2) return { success: true, data: [] };
+    const rows = sheet.getRange(2, 1, last-1, 8).getValues();
+    const data = rows.map(r => ({
+      no: r[0], hadiah: r[1], noKK: r[2], nama: r[3],
+      kelurahan: r[4], waktu: r[5], konfirmasi: r[6], catatan: r[7]
+    }));
+    return { success: true, data };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ------------------------------------------------------------
+// STATISTIK
+// ------------------------------------------------------------
+function getStatistik() {
+  try {
+    const p = getPeserta();
+    const r = getRekap();
+    const totalPeserta  = p.data.length;
+    const totalTerpilih = r.data.length;
+    const hadir         = r.data.filter(x => x.konfirmasi === 'Hadir').length;
+    const terpilih      = r.data.filter(x => x.konfirmasi === 'Terpilih').length;
+
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+    const totalEliminasi = (sheetE && sheetE.getLastRow() > 1) ? sheetE.getLastRow() - 1 : 0;
+
+    const sisaPool = totalPeserta - totalTerpilih - totalEliminasi;
+    return {
+      success: true,
+      totalPeserta, totalTerpilih,
+      sisaPool: sisaPool < 0 ? 0 : sisaPool,
+      hadir, totalEliminasi, terpilih
+    };
+  } catch(e) { return { success: false }; }
+}
+
+// ------------------------------------------------------------
+// RESET
+// ------------------------------------------------------------
+function resetPemenang() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_PEMENANG);
+    const last  = sheet.getLastRow();
+    if (last > 1) sheet.deleteRows(2, last-1);
+    const sheetE = ss.getSheetByName(SHEET_ELIMINASI);
+    if (sheetE && sheetE.getLastRow() > 1)
+      sheetE.deleteRows(2, sheetE.getLastRow()-1);
+    const sh = ss.getSheetByName(SHEET_HADIAH);
+    if (sh && sh.getLastRow() > 1)
+      sh.getRange(2, 6, sh.getLastRow()-1, 1).setValue('Belum');
+    return { success: true };
+  } catch(e) { return { success: false, message: e.message }; }
+}
+
+function resetSemua() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  [SHEET_PESERTA, SHEET_HADIAH, SHEET_PEMENANG, SHEET_SETTINGS, SHEET_ELIMINASI].forEach(name => {
+    const s = ss.getSheetByName(name);
+    if (s) ss.deleteSheet(s);
+  });
+  return initSheets();
+}
