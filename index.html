@@ -2,9 +2,12 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0B2419">
 <title>Undian Doorprize — Tahun Baru Islam</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"></noscript>
 <style>
 /* ═══════════════════════════════════════════
    ROOT VARIABLES & RESET
@@ -42,6 +45,10 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+/* Responsive touch: hilangkan 300ms tap delay di Android */
+a, button, [onclick], label, input, select, textarea {
+  touch-action: manipulation;
+}
 body {
   font-family: 'Nunito', sans-serif;
   background: var(--dark);
@@ -49,12 +56,18 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   font-size: 18px; /* Base font lebih besar */
+  /* Isolasi stacking context agar compositing lebih efisien */
+  isolation: isolate;
+  /* Android: cegah overscroll bounce yang memicu repaint */
+  overscroll-behavior-y: none;
 }
 
 /* ═══════════════════════════════════════════
-   ANIMATED BACKGROUND
+   ANIMATED BACKGROUND — CSS-only (no canvas loop)
+   Lebih efisien di GPU Android karena berjalan
+   di compositor thread, bukan main thread.
 ═══════════════════════════════════════════ */
-#bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#bg-canvas { display: none; } /* Canvas dinonaktifkan — diganti CSS */
 
 /* Pola geometri Islam */
 body::before {
@@ -62,6 +75,30 @@ body::before {
   position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .06;
   background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23FFD700' stroke-width='0.8'%3E%3Cpolygon points='40,4 76,22 76,58 40,76 4,58 4,22'/%3E%3Cpolygon points='40,16 64,28 64,52 40,64 16,52 16,28'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 80px 80px;
+  will-change: auto;
+}
+
+/* Bintang animasi — CSS keyframe berjalan di GPU compositor */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 15% 20%, rgba(255,215,0,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 60%, rgba(255,215,0,.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 55% 10%, rgba(255,215,0,.55) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 45%, rgba(255,215,0,.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 75%, rgba(255,215,0,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 85%, rgba(255,215,0,.45) 0%, transparent 100%),
+    radial-gradient(2px 2px at 65% 30%, rgba(255,215,0,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 90%, rgba(255,215,0,.35) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 5%  50%, rgba(255,215,0,.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 15%, rgba(255,215,0,.4) 0%, transparent 100%);
+  animation: starDrift 30s linear infinite;
+  will-change: transform;
+}
+@keyframes starDrift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-80px); }
 }
 
 /* ═══════════════════════════════════════════
@@ -160,11 +197,11 @@ header h1 {
 .side-menu-btn {
   padding: 14px 18px; border: none;
   border-radius: 0 12px 12px 0;
-  background: rgba(10,26,13,.95); border: 1px solid rgba(255,215,0,.25);
+  background: rgba(10,26,13,.97); border: 1px solid rgba(255,215,0,.25);
   color: var(--gold2); font-family: 'Nunito', sans-serif;
   font-size: .88rem; font-weight: 800; cursor: pointer;
-  transition: all .2s; white-space: nowrap;
-  backdrop-filter: blur(12px);
+  transition: background .2s, color .2s; white-space: nowrap;
+  /* backdrop-filter dihapus: penyebab utama flicker di GPU Android */
   box-shadow: 4px 0 20px rgba(0,0,0,.4);
   display: flex; align-items: center; gap: 8px;
 }
@@ -186,10 +223,10 @@ header h1 {
 }
 .undian-stat-chip {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(10,26,13,.8); border: 1px solid rgba(255,215,0,.12);
+  background: rgba(10,26,13,.92); border: 1px solid rgba(255,215,0,.12);
   border-radius: 20px; padding: 4px 14px;
   font-size: .78rem; color: var(--muted); font-weight: 700;
-  backdrop-filter: blur(6px);
+  /* backdrop-filter dihapus */
 }
 .undian-stat-chip .chip-num {
   font-weight: 900; font-size: .85rem;
@@ -202,12 +239,15 @@ header h1 {
 .panel-overlay {
   position: fixed; top: 0; bottom: 0; z-index: 200;
   width: min(92vw, 680px);
-  background: rgba(11,36,25,.97);
+  background: rgba(11,36,25,.99);
   border: 1px solid rgba(255,215,0,.2);
-  backdrop-filter: blur(16px);
+  /* backdrop-filter dihapus: compositing layer mahal di Android */
   overflow-y: auto; padding: 28px 24px;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
   box-shadow: 0 0 60px rgba(0,0,0,.7);
+  /* Promote ke GPU layer agar slide animasi smooth */
+  will-change: transform;
+  contain: layout style;
 }
 .panel-overlay.panel-left {
   left: 0; transform: translateX(-110%);
@@ -222,8 +262,8 @@ header h1 {
 .panel-overlay.open { transform: translateX(0); }
 .panel-overlay-backdrop {
   position: fixed; inset: 0; z-index: 199;
-  background: rgba(0,0,0,.5); display: none;
-  backdrop-filter: blur(3px);
+  background: rgba(0,0,0,.6); display: none;
+  /* backdrop-filter dihapus di backdrop — tidak perlu blur di atas blur */
 }
 .panel-overlay-backdrop.show { display: block; animation: fadeUp .2s ease; }
 .panel-close {
@@ -251,10 +291,10 @@ header h1 {
    CARDS
 ═══════════════════════════════════════════ */
 .card {
-  background: rgba(10,26,13,.82);
+  background: rgba(10,26,13,.92);
   border: 1px solid rgba(255,215,0,.18);
   border-radius: var(--radius); padding: 26px; margin-bottom: 20px;
-  backdrop-filter: blur(8px);
+  /* backdrop-filter dihapus */
   box-shadow: 0 4px 28px rgba(0,0,0,.4);
   transition: border-color .2s;
 }
@@ -291,15 +331,13 @@ input::placeholder, textarea::placeholder { color: rgba(126,200,150,.4); }
 .btn {
   padding: 12px 26px; border: none; border-radius: 8px;
   font-family: 'Nunito', sans-serif; font-weight: 900;
-  font-size: 1rem; cursor: pointer; transition: all .2s;
+  font-size: 1rem; cursor: pointer;
+  transition: box-shadow .2s, transform .2s, background .15s;
   display: inline-flex; align-items: center; gap: 8px;
   position: relative; overflow: hidden; letter-spacing: .02em;
+  /* Hapus ::after overlay pseudo-element: paint mahal di Android */
 }
-.btn::after {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(255,255,255,0); transition: background .15s;
-}
-.btn:hover::after { background: rgba(255,255,255,.1); }
+/* btn::after overlay dihapus — menyebabkan repaint di setiap hover/touch */
 .btn-gold {
   background: linear-gradient(135deg, #A87000, var(--gold), var(--gold2));
   color: #1a0d00; box-shadow: 0 2px 20px rgba(255,215,0,.35);
@@ -359,6 +397,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   background: rgba(10,26,13,.85); border: 1px solid rgba(255,215,0,.2);
   border-radius: 14px; padding: 20px 14px; text-align: center;
   transition: border-color .2s, transform .2s;
+  will-change: transform;
 }
 .stat-box:hover { border-color: rgba(255,215,0,.45); transform: translateY(-2px); }
 .stat-box .num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
@@ -387,7 +426,8 @@ tr:hover td { background: rgba(255,215,0,.05); }
 ═══════════════════════════════════════════ */
 #loading-overlay {
   position: fixed; inset: 0; z-index: 9995;
-  background: rgba(11,36,25,.92); backdrop-filter: blur(6px);
+  background: rgba(11,36,25,.96);
+  /* backdrop-filter dihapus */
   display: none; align-items: center; justify-content: center; flex-direction: column; gap: 18px;
 }
 #loading-overlay.show { display: flex; }
@@ -456,14 +496,14 @@ tr:hover td { background: rgba(255,215,0,.05); }
 }
 .prize-frame {
   position: relative;
-  background: linear-gradient(180deg, rgba(20,59,38,.55), rgba(11,36,25,.55));
+  background: linear-gradient(180deg, rgba(20,59,38,.65), rgba(11,36,25,.65));
   border: 1px solid rgba(255,215,0,.22);
   border-radius: 22px;
   padding: 18px 0 var(--prize-pad-bot);
   display: flex; flex-direction: column;
   height: var(--panel-h); /* = title + 3 kartu + 2 gap + padding bawah */
   box-shadow: 0 6px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter: blur(6px);
+  /* backdrop-filter dihapus */
 }
 .prize-frame-title {
   display: flex; align-items: center; gap: 8px;
@@ -493,6 +533,9 @@ tr:hover td { background: rgba(255,215,0,.05); }
   overflow-x: hidden;
   padding: 4px 24px;
   position: relative;
+  /* Isolasi repaint agar scroll viewport tidak trigger repaint halaman */
+  contain: layout style;
+  overscroll-behavior: none;
 }
 .prize-frame::before, .prize-frame::after {
   content: ''; position: absolute; left: 1px; right: 1px; height: 44px;
@@ -512,6 +555,7 @@ tr:hover td { background: rgba(255,215,0,.05); }
   flex-wrap: nowrap;
   gap: 18px;
   transition: transform .15s linear;
+  will-change: transform;
 }
 .prize-card {
   background: rgba(8,20,10,.85);
@@ -650,6 +694,8 @@ tr:hover td { background: rgba(255,215,0,.05); }
   background: radial-gradient(ellipse at center, #143B26 0%, #0B2419 100%);
   display: none; align-items: center; justify-content: center;
   flex-direction: column; gap: 12px; padding: 12px 16px;
+  /* Prevent slot overlay from triggering layout on rest of page */
+  contain: layout style;
 }
 #slot-overlay.show { display: flex; }
 
@@ -671,15 +717,14 @@ tr:hover td { background: rgba(255,215,0,.05); }
 
 /* Kotak mesin slot utama — fit layar */
 .slot-machine-wrap {
-  background: rgba(10,26,13,.95);
+  background: rgba(10,26,13,.98);
   border: 3px solid var(--gold);
   border-radius: 20px; padding: clamp(14px, 2.5vw, 32px) clamp(20px, 4vw, 60px);
   text-align: center; width: min(94vw, 860px);
-  box-shadow:
-    0 0 80px rgba(255,215,0,.2),
-    0 0 40px rgba(255,215,0,.1),
-    inset 0 0 40px rgba(0,0,0,.6);
+  /* Sederhanakan dari 3 layer shadow → 1: lebih ringan di GPU Android */
+  box-shadow: 0 0 60px rgba(255,215,0,.18), inset 0 0 40px rgba(0,0,0,.6);
   position: relative; overflow: hidden; flex-shrink: 1;
+  contain: layout style;
 }
 .slot-machine-wrap::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -718,7 +763,8 @@ tr:hover td { background: rgba(255,215,0,.05); }
 #slot-nama {
   font-size: clamp(2rem, 5.5vw, 5rem);
   color: #fff; font-weight: 900; margin-top: 8px; min-height: 1.1em;
-  text-shadow: 0 0 40px rgba(255,255,255,.3), 0 2px 8px rgba(0,0,0,.8);
+  /* Sederhanakan text-shadow: 1 layer cukup, 2 layer mahal saat text berganti cepat */
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
   line-height: 1.15;
 }
 /* Kelurahan/Alamat — cukup besar */
@@ -847,14 +893,14 @@ tr:hover td { background: rgba(255,215,0,.05); }
 ═══════════════════════════════════════════ */
 .grand-frame {
   position: relative;
-  background: linear-gradient(180deg, rgba(255,215,0,.10), rgba(20,59,38,.55) 40%, rgba(11,36,25,.6));
+  background: linear-gradient(180deg, rgba(255,215,0,.10), rgba(20,59,38,.65) 40%, rgba(11,36,25,.7));
   border: 2px solid rgba(255,215,0,.45);
   border-radius: 24px;
   padding: 22px 22px 22px;
   display: flex; flex-direction: column;
   height: var(--panel-h); /* sejajar dengan prize-frame */
   box-shadow: 0 0 50px rgba(255,215,0,.12), 0 8px 36px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
-  backdrop-filter: blur(6px);
+  /* backdrop-filter dihapus */
 }
 .grand-frame::before {
   content: '';
@@ -1074,6 +1120,26 @@ tr:hover td { background: rgba(255,215,0,.05); }
   /* Di mobile kolom-kartu lebih tinggi — bebaskan viewport dari constraint */
   .prize-track-viewport { height: 320px; }
   .prize-frame, .grand-frame { height: auto; min-height: 360px; }
+}
+
+/* ═══════════════════════════════════════════
+   REDUCED MOTION — Android low-power / accessibility
+═══════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  body::after { animation: none; }
+}
+/* Nonaktifkan infinite pulse animation di layar sentuh saat tidak ada hover */
+@media (hover: none) and (pointer: coarse) {
+  .btn-siap-undi-inline { animation: none; }
+  @keyframes pulseArrow { 0%,100% { opacity: .6; } }
+  @keyframes pulseStop  { 0%,100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,140,0,.5); } }
+  @keyframes shimmerAcak { 0%,100% { box-shadow: 0 2px 12px rgba(200,80,192,.3); } }
+  @keyframes pulseToggle { 0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.25); } }
 }
 
 /* ═══════════════════════════════════════════
@@ -1408,6 +1474,9 @@ tr:hover td { background: rgba(255,215,0,.05); }
      JAVASCRIPT
 ══════════════════════════════════════════════════════ -->
 <script>
+// ─── DEVICE DETECTION (global, dipakai oleh semua modul di bawah) ──
+const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
 // ─── STATE ───────────────────────────────────────────────────
 let allPeserta    = [];
 let allHadiah     = [];
@@ -1438,50 +1507,71 @@ function clientSideShuffle(arr) {
 }
 
 
-// ─── STARFIELD CANVAS ────────────────────────────────────────
+// ─── SIDE MENU TOUCH SUPPORT ─────────────────────────────────
+// Di Android, CSS :hover tidak berfungsi untuk side-trigger.
+// Gunakan touch event sebagai pengganti hover.
+(function(){
+  function setupSideMenuTouch(triggerClass, menuClass, arrowClass){
+    const trigger = document.querySelector(triggerClass);
+    const menu    = document.querySelector(menuClass);
+    const arrow   = document.querySelector(arrowClass);
+    if(!trigger || !menu) return;
+
+    // Tap pada arrow/trigger → toggle menu
+    [trigger, arrow].filter(Boolean).forEach(el=>{
+      el.addEventListener('touchstart', (e)=>{
+        e.preventDefault();
+        const isOpen = menu.style.transform === 'translateY(-50%) translateX(0px)' ||
+                       menu.classList.contains('touch-open');
+        if(isOpen){
+          menu.classList.remove('touch-open');
+          menu.style.transform = '';
+          if(arrow) arrow.style.opacity = '.5';
+        } else {
+          menu.classList.add('touch-open');
+          menu.style.transform = 'translateY(-50%) translateX(0px)';
+          if(arrow) arrow.style.opacity = '0';
+          // Auto-tutup setelah 4 detik
+          setTimeout(()=>{
+            menu.classList.remove('touch-open');
+            menu.style.transform = '';
+            if(arrow) arrow.style.opacity = '.5';
+          }, 4000);
+        }
+      }, {passive: false});
+    });
+  }
+  // Pasang setelah DOM siap
+  window.addEventListener('DOMContentLoaded', ()=>{
+    setupSideMenuTouch('.side-trigger.left',  '.side-menu.left',  '.side-arrow.left-arrow');
+    setupSideMenuTouch('.side-trigger.right', '.side-menu.right', '.side-arrow.right-arrow');
+  });
+})();
+// Diganti dengan animasi CSS di body::after (lebih efisien di Android
+// karena berjalan di GPU compositor thread, bukan JS main thread).
+// Kode asli disimpan di bawah sebagai komentar untuk referensi.
+/*
 (function(){
   const canvas = document.getElementById('bg-canvas');
-  const ctx    = canvas.getContext('2d');
-  let stars    = [];
-  let W, H;
-  function resize(){
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  function initStars(){
-    stars = Array.from({length: 140}, () => ({
-      x: Math.random()*W, y: Math.random()*H,
-      r: Math.random()*1.8 + .4,
-      a: Math.random(), da: (Math.random()*.01+.003)*(Math.random()<.5?1:-1),
-      speed: Math.random()*.18+.06
-    }));
-  }
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    stars.forEach(s => {
-      s.a += s.da;
-      if(s.a>1||s.a<0) s.da *= -1;
-      s.y -= s.speed;
-      if(s.y < -5){ s.y = H+5; s.x = Math.random()*W; }
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(255,215,0,${s.a*0.65})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  window.addEventListener('resize', ()=>{ resize(); initStars(); });
-  resize(); initStars(); draw();
+  ...
 })();
+*/
 
 // ─── AUDIO ENGINE ────────────────────────────────────────────
 function getAudioCtx(){
-  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  }
+  // Android Chrome: AudioContext sering dalam state 'suspended' sampai ada gesture
+  if(audioCtx.state === 'suspended'){
+    audioCtx.resume().catch(()=>{});
+  }
   return audioCtx;
 }
 function playTone(freq, dur, type='sine', vol=0.3){
   try {
     const ac  = getAudioCtx();
+    if(ac.state !== 'running') return; // skip jika masih suspended
     const osc = ac.createOscillator();
     const gn  = ac.createGain();
     osc.connect(gn); gn.connect(ac.destination);
@@ -1528,7 +1618,7 @@ function toast(msg, type='info'){
 // Cara deploy: Apps Script → Deploy → New deployment →
 //   Type: Web app, Execute as: Me, Who has access: Anyone
 // Salin URL yang muncul, tempel di bawah ini.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby-s2a4I-qm-AgKZM24_Zq78dCsBbBZ8ZY6kH-Oa7xXYXZe-WlWIZdWX4exRe-5xrnW/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxnk9RF9OPQ49HZM1XpJ8Vaw-OLvh61AcYMEFzfqjadJEFCVb-vC6tAuaWMPTXbInj/exec';
 
 // gasCall — kirim ke GAS via fetch GET (cross-origin aman tanpa CORS issue)
 // GAS doGet membaca parameter 'fn' dan 'args' lalu mengembalikan JSON
@@ -2016,7 +2106,7 @@ let grandMarqueeEnabled = false;
 let grandMarqueeRAF     = null;
 let grandMarqueePaused  = false;  // true saat kartu spotlight tampil
 let grandMarqueeOffset  = 0;      // translateY saat ini (px, selalu negatif = ke atas)
-let grandMarqueeSpeed   = 0.55;   // px per frame normal
+let grandMarqueeSpeed   = isTouchDevice ? 0.35 : 0.55;  // px per frame normal
 let grandMarqueeSpotlightTimer = null;
 
 function toggleGrandMarquee(){
@@ -2191,8 +2281,10 @@ function reattachGrandMarquee(){
 // (karena salinan kedua identik dengan salinan pertama).
 // Berhenti sementara saat undian berlangsung, hadiah terkunci,
 // atau saat kursor hover di area kotak hadiah.
+
+// Kecepatan lebih rendah di layar sentuh (Android) untuk menghindari jank
 let boxRunRAF      = null;
-let boxScrollSpeed = 0.45; // px per frame, scroll pelan
+let boxScrollSpeed = isTouchDevice ? 0.3 : 0.45; // px per frame
 let isHoveringPrizeTrack = false;
 let prizeHoverListenersAttached = false;
 
@@ -2200,17 +2292,26 @@ function setupPrizeHoverPause(){
   if(prizeHoverListenersAttached) return;
   const viewport = document.getElementById('prize-track-viewport');
   if(!viewport) return;
+
+  // Mouse events (desktop)
   viewport.addEventListener('mouseenter', ()=>{
     isHoveringPrizeTrack = true;
-    // Biarkan loop RAF tetap jalan — ia akan membaca flag ini dan skip scroll
   });
   viewport.addEventListener('mouseleave', ()=>{
     isHoveringPrizeTrack = false;
-    // Pastikan RAF aktif kembali jika tidak ada kondisi lain yang menghentikannya
     if(!slotRunning && lockedPrizeIdx === null){
       startBoxRunning();
     }
   });
+
+  // Touch events (Android) — pause saat disentuh
+  viewport.addEventListener('touchstart', ()=>{
+    isHoveringPrizeTrack = true;
+  }, {passive: true});
+  viewport.addEventListener('touchend', ()=>{
+    isHoveringPrizeTrack = false;
+  }, {passive: true});
+
   prizeHoverListenersAttached = true;
 }
 
@@ -2620,7 +2721,7 @@ async function konfirmasiSemuaHadir(pemenang, namaHadiah){
   toast('Semua pemenang dikonfirmasi hadir ✅','success');
 }
 
-// Shortcut keyboard
+// Shortcut keyboard (desktop) — tidak mempengaruhi Android
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
     if(currentPanel) { closePanel(); return; }
@@ -2637,7 +2738,9 @@ function buatConfetti(){
   const box    = document.getElementById('confetti-box');
   box.innerHTML = '';
   const colors = ['#FFD700','#FFE55C','#00D94A','#fff','#FFA533','#6BFFAA','#00FFD4','#FFF3A3','#A7F3D0'];
-  for(let i=0;i<150;i++){
+  // Android: kurangi dari 150 → 60 partikel untuk menghindari jank paint
+  const count = isTouchDevice ? 60 : 150;
+  for(let i=0;i<count;i++){
     const el = document.createElement('div');
     el.className = 'confetti-piece';
     el.style.cssText=`
@@ -2763,6 +2866,20 @@ async function resetSemuaKonfirmasi(){
   refreshAll();
 }
 
+// ─── PAGE VISIBILITY — Pause semua RAF saat tab tidak aktif ──
+// Penting di Android: tab background tetap menguras baterai dan
+// menyebabkan jank saat kembali ke foreground jika RAF terus jalan.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    stopBoxRunning();
+    stopGrandMarquee();
+  } else {
+    // Kembali ke foreground — restart animasi yang aktif
+    if(!slotRunning && lockedPrizeIdx === null) startBoxRunning();
+    if(grandMarqueeEnabled) startGrandMarquee();
+  }
+});
+
 // ─── INIT ────────────────────────────────────────────────────
 // Pre-warm GAS saat mouse mendekati tombol Undi —
 // mengurangi cold-start delay ketika tombol benar-benar diklik.
@@ -2773,12 +2890,15 @@ function warmGas(){
   gasCall('ping').catch(()=>{});
 }
 // Pasang listener pre-warm di tombol Undi Sekarang & Siap Undi
-document.addEventListener('mouseover', e=>{
+// Desktop: mouseover | Android: touchstart
+function warmGasOnTarget(e){
   const t = e.target.closest('button');
   if(!t) return;
   const txt = t.textContent||'';
   if(txt.includes('Undi') || txt.includes('Siap')) warmGas();
-}, {passive:true});
+}
+document.addEventListener('mouseover',   warmGasOnTarget, {passive:true});
+document.addEventListener('touchstart',  warmGasOnTarget, {passive:true});
 
 window.onload = async () => {
   showLoading(true,'MEMUAT APLIKASI...');
